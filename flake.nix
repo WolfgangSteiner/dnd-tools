@@ -13,6 +13,7 @@
       buildInputs = [
         pkgs.python310
         pkgs.python310Packages.reportlab
+        pkgs.python310Packages.numpy
       ];
     };
   };
