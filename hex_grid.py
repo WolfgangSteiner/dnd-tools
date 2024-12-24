@@ -25,7 +25,7 @@ def draw_hex_grid(canvas, hex_width):
 
     # Create a canvas
     c.setLineWidth(0.25)
-    c.setStrokeGray(0.75)
+    c.setStokeGray(0.75)
 
     # Draw hexagons row by row
     y = 0
