@@ -1,6 +1,6 @@
 from reportlab.lib.pagesizes import A6, landscape
 from reportlab.pdfgen import canvas
-from pdf_tools import PageInfo, Rectangle, Point, Line
+from pdf_tools import Page, Rectangle, Point, Line
 
 def draw_ability_field(page, pos, ability, proficiencies, width=22, height=20, radius=1.0):
     page.stroke_width = 1.0
@@ -10,7 +10,7 @@ def draw_ability_field(page, pos, ability, proficiencies, width=22, height=20, r
     left_col_rect = Rectangle(0, 0, width * 0.4, height).align_to_rect(outer_rect, "left", "bottom")
     right_col_rect = Rectangle(0, 0, width * 0.6, height).align_to_rect(outer_rect, "right", "bottom")
     ability_score_rect = Rectangle(0, 0, width * 0.4, height * 0.4).align_to_rect(outer_rect, "left", "bottom")
-    page.draw_rounded_rect(outer_rect, radius)
+    page.draw_rect(outer_rect, radius=radius)
     page.stroke_width = 0.5
     page.font_size = 10
     page.draw_text_centered(ability_rect, ability)
@@ -26,7 +26,7 @@ def draw_ability_field(page, pos, ability, proficiencies, width=22, height=20, r
 
 def draw_check_box(page, pos, text):
     box = Rectangle(pos.x, pos.y, 2.0, 2.0)
-    page.draw_rounded_rect(box, 1.0, stroke_width=0.25)
+    page.draw_rect(box, radius=1.0, stroke_width=0.25)
     gap = 0.5 
     page.font_size = 6
     text_pos = Point(box.x2() + gap, box.center().y - page.font_height() / 2) 
@@ -34,7 +34,7 @@ def draw_check_box(page, pos, text):
 
 
 def draw_stat_field(page, rect, text):
-    page.draw_rounded_rect(rect, 1.0, stroke_width=1.0) 
+    page.draw_rect(rect, radius=1.0, stroke_width=1.0) 
     text_rect,_ = rect.top_partition(height=4.0)
     page.font_size = 8
     page.draw_text_centered(text_rect, text)
@@ -42,9 +42,10 @@ def draw_stat_field(page, rect, text):
 
 def char_sheet():
     filename = "char_sheet_a6.pdf"
-    p = PageInfo(filename, landscape(A6), 5.0)
+    p = Page(filename, landscape(A6), 5.0)
     p.draw_frame()
     page_frame = p.drawable_rect()
+
     gap = 1.0
 
     stats = ["AC", "HP", "SPD", "INI", "PPER", "PRFB"]

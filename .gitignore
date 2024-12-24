@@ -1,3 +1,4 @@
 *.pyc
 *.pdf
 spell_cards/*
+assets/*
