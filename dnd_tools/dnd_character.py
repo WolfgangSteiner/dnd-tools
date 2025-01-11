@@ -52,7 +52,7 @@ class Character():
         self.gear = []
         self.items = []
         self.passive_perception = kwargs.get("passive_perception", 10 + self.skill_modifier("perception"))
-        self.is_spellcaster = kwargs_get("is_spellcaster", self.profession in ("wizard", "druid"))
+        self.is_spellcaster = kwargs.get("is_spellcaster", self.profession.lower() in ("wizard", "druid"))
 
     def ability_modifier(self, ability):
         return int((getattr(self, ability) - 10) / 2)
