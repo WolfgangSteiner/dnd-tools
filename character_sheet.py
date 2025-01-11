@@ -260,6 +260,11 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
 
     attack_rect = Rectangle(h=60).horizontal_align_to_rect(first_column, "block").vertical_align_to_rect(other_stats_rect, "below", gap=2)
 
+    if character.is_spellcaster:
+        spell_slots_rect = Rectangle(x1=rect.x1, w=9*17+8*gap, h=16).vertical_align_to_rect(other_stats_rect, "below", gap)
+        attack_rect = attack_rect.vertical_align_to_rect(spell_slots_rect, "below", gap)
+        draw_spell_slots(page, spell_slots_rect, character)
+
     skill_rect = attack_rect.duplicate_right(gap)
     proficiency_rect = attack_rect.duplicate_below(gap)
     feats_traits_rect = proficiency_rect.duplicate_right(gap)
@@ -271,19 +276,15 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
 
     draw_coins_field(page, Rectangle(w=16,h=16).align_to_rect(name_rect, horizontal_align="right", vertical_align="below", vertical_gap=gap), character)
 
-
-
     draw_skills(page, skill_rect, values=character)
     draw_attacks(page, attack_rect, values=character)
     draw_proficiency_field(page, proficiency_rect, character=character)
     draw_feats_traits(page, feats_traits_rect, character)
 
     spell_slots_width = 10
-    spell_slots_rect = Rectangle(w=10).vertical_align_to_rect(skill_rect, "block").horizontal_align_to_rect(rect, "right", "block")
-    inventory_rect = Rectangle(x1=name_rect.x1, x2=spell_slots_rect.x1).vertical_align_to_rect(skill_rect, "block")
+    inventory_rect = Rectangle(x1=name_rect.x1, x2=name_rect.x2).vertical_align_to_rect(skill_rect, "block")
 
     draw_inventory(page, inventory_rect, character)
-    draw_spell_slots(page, spell_slots_rect, character)
 
     text_rect = Rectangle(y1=proficiency_rect.y1, y2=proficiency_rect.y2).horizontal_align_to_rect(name_rect, "block")
     draw_personality(page, text_rect, character, gap=gap)
@@ -295,11 +296,9 @@ def draw_inventory(page, rect, character, heading=False, gap=2):
         page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
     
-def draw_spell_slots(page, rect, character, heading=False, gap=2):
-    draw_text_field(page, rect, "Spells", humanized=True)
-    for i,r in enumerate(rect.apply_margin(2,2).subdivide(9,1, horizontal_gap=2, col_wise=True)):
-        page.draw_text_aligned(f"{i+1:d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
-        page.draw_line(r.bottom_edge(), stroke_width=0.5)
+def draw_spell_slots(page, rect, character, gap=2):
+    spell_levels = ["1st", "2nd", "3rd"] + [f"{i}th" for i in range(2,10)]
+    draw_fields(page, rect, spell_levels, humanized=True) 
 
 def draw_personality(page, rect, character, heading=False, gap=2):
     text_rects = rect.subdivide(4,1, vertical_gap=gap)
