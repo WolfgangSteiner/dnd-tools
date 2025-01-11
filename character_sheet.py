@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import re
 import math
 from dnd_tools.dnd_character import Character, ability_for_skill, sort_skills, ABILITIES
-from pygrv import get_arg
+from pygrv.utils import get_arg, to_ordinal
 
 def id_for_label(label):
     id = re.sub("['\"*+~()\[\]\{\}]", "", label.lower())
@@ -85,7 +85,7 @@ def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanize
             page.draw_text_aligned(value_str, value_box, font_size=value_font_size)
         #page.draw_line_humanized(top_row.bottom_edge())
 
-def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, humanized=False, draw_frame=True, small_caps=True):
+def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, humanized=False, draw_frame=True, small_caps=True, font_size=10, font="RobotoSlab", horizontal_align="center"):
     page.font = "SouvenirDemi"
     page.stroke_width = 0.4 
     page.stroke_color = 0
@@ -103,12 +103,11 @@ def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, hum
 
     top_row, value_box = rect.top_partition(height=4)
     label_rect, label_align = top_row, "left"
-    value_box = rect
-    value_font_size = 16 if len(str(value)) < 3 else 12
+    value_box = rect.apply_margin(2,2)
     if title:
         page.draw_text_aligned(title, label_rect.apply_margin(1,1), horizontal_align=label_align, vertical_align="top", small_caps=small_caps, font_size=8)
         if value:
-            page.draw_text_aligned(value, value_box, font_size=value_font_size)
+            page.layout_text_aligned(value, value_box, font=font, font_size=font_size, horizontal_align=horizontal_align)
 
 
 def draw_fields(page, rect, labels, values=SimpleNamespace(), humanized=False, num_rows=1, num_cols=None):
@@ -258,7 +257,7 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
 
     hp_rect = Rectangle(h=16).horizontal_align_to_rect(second_column, "block").vertical_align_to_rect(ability_rect, "below", gap=2)
 
-    attack_rect = Rectangle(h=60).horizontal_align_to_rect(first_column, "block").vertical_align_to_rect(other_stats_rect, "below", gap=2)
+    attack_rect = Rectangle(h=80).horizontal_align_to_rect(first_column, "block").vertical_align_to_rect(other_stats_rect, "below", gap=2)
 
     if character.is_spellcaster:
         spell_slots_rect = Rectangle(x1=rect.x1, x2=ability_rect.x2, h=10).vertical_align_to_rect(other_stats_rect, "below", gap)
@@ -297,13 +296,30 @@ def draw_inventory(page, rect, character, heading=False, gap=2):
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
     
 def draw_spell_slots(page, rect, character, gap=2):
-    spell_levels = ["1st", "2nd", "3rd"] + [f"{i}th" for i in range(2,10)]
-    draw_fields(page, rect, spell_levels, humanized=True) 
+    for lvl, r in zip(range(9), rect.subdivide(1,9)):
+        lvl += 1
+        num_slots = character.spell_slots_for_level(lvl)
+        text_color = 0.0
+        if num_slots == 0:
+            page.draw_line_humanized(r.diagonal_a(), stroke_width=0.4)
+            #page.fill_rect(r, fill_color=0.75)
+            text_color = 0.5
+        else:
+            num_rows = 1 if num_slots <= 3 else 2
+            num_cols = num_slots // num_rows
+            bips = r.apply_margin(left=4, right=2, y=2).subdivide(2,2)
+            for i in range(num_slots):
+                page.draw_rect(bips[i], stroke_width=0.25)
+        page.draw_text_aligned(lvl, r.apply_margin(1,1), "left", "top", font_size=8, small_caps=True, color=text_color)
+        page.draw_line_humanized(r.right_edge(), stroke_width=0.4)
+    page.draw_rect_humanized(rect, stroke_width=0.4)
+
+    #draw_fields(page, rect, spell_levels, humanized=True) 
 
 def draw_personality(page, rect, character, heading=False, gap=2):
     text_rects = rect.subdivide(4,1, vertical_gap=gap)
     for title, text_rect in zip(("Personality", "Ideals", "Bonds", "Flaws"), text_rects):
-        draw_text_field(page, text_rect, title, humanized=True)
+        draw_text_field(page, text_rect, title, character, humanized=True, font_size=8, horizontal_align="left")
 
     #p.draw_humanized_rect(rect.apply_margin(5, 5), stroke_width=1.0, stroke_color=0, curvature_spread=0.2, point_spread=0.5, num_strokes=2)
 

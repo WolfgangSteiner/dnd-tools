@@ -64,6 +64,48 @@ class Character():
             mod += self.proficiency_bonus
         return mod
 
+    def spell_slots_for_level(self, spell_lvl):
+        if not self.is_spellcaster:
+            return 0
+
+        if spell_lvl == 1:
+            return min(4, self.level + 1)
+        elif spell_lvl == 2:
+            return min(3, self.level - 1) if self.level >= 3 else 0
+        elif spell_lvl == 3:
+            return min(3, self.level - 3) if self.level >= 5 else 0
+        elif spell_lvl == 4:
+            return min(3, self.level - 6) if self.level >= 7 else 0
+        elif spell_lvl == 5:
+            if self.level >= 18:
+                return 3
+            elif self.level >= 9:
+                return min(2, self.level - 8)
+            else:
+                return 0
+        elif spell_lvl == 6:
+            if self.level >= 19:
+                return 2
+            elif self.level >= 11:
+                return 1
+            else:
+                return 0
+        elif spell_lvl == 7:
+            if self.level >= 20:
+                return 2
+            elif self.level >= 13:
+                return 1
+            else:
+                return 0
+        elif spell_lvl == 8:
+            return 1 if self.level >= 15 else 0
+        elif spell_lvl == 9:
+            return 1 if self.level >= 17 else 0
+        else:
+            raise ValueError
+
+    
+
     @property
     def proficiency_bonus(self):
         return ceil(self.level / 4) + 1

@@ -149,10 +149,12 @@ class Page:
             word = word[1:]
         return res, word
 
-    def draw_text(self, pos, text, font=None, font_size=None, small_caps=False):
+    def draw_text(self, pos, text, font=None, font_size=None, small_caps=False, color=0.0):
         font = self.font if font is None else font
         font_size = self.font_size if font_size is None else font_size
-
+        text = str(text)
+        self.push_state()
+        self.c.setFillGray(color)
         if small_caps:
             small_font_size = self.small_caps_factor * font_size
             en_space = small_font_size / 2 / mm
@@ -183,6 +185,8 @@ class Page:
         else:
             self.c.setFont(font, font_size)
             self.c.drawString(pos.x * mm, pos.y * mm, text)
+
+        self.pop_state()
 
     def font_height(self, font=None, font_size=None):
         font = get_arg(font, self.font)
@@ -261,12 +265,13 @@ class Page:
         self.c.setFont(self.font, self.font_size)
         self.c.drawString(pos_pt.x, pos_pt.y, text)
 
-    def draw_text_aligned(self, text, rect, horizontal_align="center", vertical_align="center", font=None, font_size=None, small_caps=False):
+    def draw_text_aligned(self, text, rect, horizontal_align="center", vertical_align="center", font=None, font_size=None, small_caps=False, color=0.0):
+        text = str(text)
         bbox = self.text_bounding_box(text, font=font, font_size=font_size, small_caps=small_caps)
         bbox = bbox.align_to_rect(rect, horizontal_align, vertical_align)
-        self.draw_text(bbox.pos, text, font=font, font_size=font_size, small_caps=small_caps)
+        self.draw_text(bbox.pos, text, font=font, font_size=font_size, small_caps=small_caps, color=color)
 
-    def layout_text_aligned(self, text, rect, font=None, font_size=None, min_font_size=6, line_spacing=1.2):
+    def layout_text_aligned(self, text, rect, font=None, font_size=None, min_font_size=6, line_spacing=1.2, horizontal_align="center", vertical_align="center"):
         """
         Draw multi-line text within a specified rectangle on the ReportLab canvas.
         Automatically reduces the font size until the text fits within the rectangle.
@@ -319,8 +324,7 @@ class Page:
             current_font_size -= 0.5  # Decrease font size by 0.5 points
         
         # If text still doesn't fit, draw it with the minimum font size
-        para_rect = Rectangle(0, 0, para_width, para_height).align_to_rect(rect)
-        self.draw_rect(para_rect)
+        para_rect = Rectangle(0, 0, para_width, para_height).align_to_rect(rect, horizontal_align=horizontal_align, vertical_align=vertical_align)
         para_rect *= mm
         para.drawOn(self.c, para_rect.x, para_rect.y)
         return current_font_size

@@ -1,6 +1,7 @@
 from .point import Point
 from .line import Line
 from .path import Path
+from pygrv.utils import get_arg
 
 class Rectangle:
     def __init__(self, x=0, y=0, w=0, h=0, x1=None, x2=None, y1=None, y2=None, radius=0):
@@ -137,8 +138,12 @@ class Rectangle:
 
         return res
 
-    def apply_margin(self, mx, my):
-        return Rectangle(self.x + mx, self.y + my, self.w - 2*mx, self.h - 2*my)
+    def apply_margin(self, x=0, y=0, left=None, right=None, top=None, bottom=None):
+        left = x if left is None else left
+        right = x if right is None else right
+        top = y if top is None else top
+        bottom = y if bottom is None else bottom
+        return Rectangle(self.x + left, self.y + bottom, self.w - left - right, self.h - top - bottom)
 
     def apply_margin_left(self, m):
         return Rectangle(self.x + m, self.y, self.w - m, self.h)
@@ -280,4 +285,10 @@ class Rectangle:
 
     def duplicate_below(self, gap=0):
         return self.copy().vertical_align_to_rect(self, "below", gap=gap)
+
+    def diagonal_a(self):
+        return Line(self.bottom_left(), self.top_right())
+
+    def diagonal_b(self):
+        return Line(self.top_left(), self.bottom_right())
 
