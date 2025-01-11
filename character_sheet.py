@@ -261,7 +261,7 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
     attack_rect = Rectangle(h=60).horizontal_align_to_rect(first_column, "block").vertical_align_to_rect(other_stats_rect, "below", gap=2)
 
     if character.is_spellcaster:
-        spell_slots_rect = Rectangle(x1=rect.x1, w=9*17+8*gap, h=16).vertical_align_to_rect(other_stats_rect, "below", gap)
+        spell_slots_rect = Rectangle(x1=rect.x1, x2=ability_rect.x2, h=10).vertical_align_to_rect(other_stats_rect, "below", gap)
         attack_rect = attack_rect.vertical_align_to_rect(spell_slots_rect, "below", gap)
         draw_spell_slots(page, spell_slots_rect, character)
 
