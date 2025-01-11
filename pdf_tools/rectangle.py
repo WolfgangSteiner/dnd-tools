@@ -14,9 +14,15 @@ class Rectangle:
         if y1 is not None:
             self.y = y1
         if x2 is not None:
-            self.w = x2 - self.x
+            if w != 0:
+                self.x1 = x2 - w
+            else:
+                self.w = x2 - self.x
         if y2 is not None:
-            self.h = y2 - self.y
+            if h != 0:
+                self.y1 = y2 - h
+            else:
+                self.h = y2 - self.y
 
         self.radius = radius
 
@@ -263,7 +269,15 @@ class Rectangle:
         bbox = Rectangle(0,0,num_cols*width,num_rows*height).align_to_rect(self, horizontal_align=horizontal_align, vertical_align=vertical_align)
         return bbox, bbox.subdivide(int(num_rows), int(num_cols))
         
-        
+    def duplicate_left(self, gap=0):
+        return self.copy().horizontal_align_to_rect(self, "left_of", gap=gap)
 
+    def duplicate_right(self, gap=0):
+        return self.copy().horizontal_align_to_rect(self, "right_of", gap=gap)
 
+    def duplicate_above(self, gap=0):
+        return self.copy().vertical_align_to_rect(self, "above", gap=gap)
+
+    def duplicate_below(self, gap=0):
+        return self.copy().vertical_align_to_rect(self, "below", gap=gap)
 

@@ -244,7 +244,6 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
 
     rect = rect.apply_margin(10,10)
     ability_row, _ = rect.top_partition(height=16.0, gap=gap)
-    second_row, third_row = _.top_partition(0.5, gap=gap)
 
     ability_rect, name_rect = ability_row.left_partition(0.6, gap=2)
     column_width = (ability_rect.w - gap) / 2
@@ -259,15 +258,11 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
 
     hp_rect = Rectangle(h=16).horizontal_align_to_rect(second_column, "block").vertical_align_to_rect(ability_rect, "below", gap=2)
 
-    spells_attack_skills_rect = Rectangle(
-
     attack_rect = Rectangle(h=60).horizontal_align_to_rect(first_column, "block").vertical_align_to_rect(other_stats_rect, "below", gap=2)
 
-    skill_rect = Rectangle(x1=second_column.x1, x2=second_column.x2, h=60).vertical_align_to_rect(other_stats_rect, "below", gap=2)
-
-    proficiency_rect = Rectangle(h=60).horizontal_align_to_rect(first_column, "block").vertical_align_to_rect(attack_rect, "below", gap=gap)
-
-    feats_traits_rect = Rectangle(h=60).horizontal_align_to_rect(second_column, "block").vertical_align_to_rect(skill_rect, "below", gap=gap)
+    skill_rect = attack_rect.duplicate_right(gap)
+    proficiency_rect = attack_rect.duplicate_below(gap)
+    feats_traits_rect = proficiency_rect.duplicate_right(gap)
 
     hp_rect = Rectangle(w=name_rect.w/2).horizontal_align_to_rect(name_rect, "left").vertical_align_to_rect(other_stats_rect, "block")
 
