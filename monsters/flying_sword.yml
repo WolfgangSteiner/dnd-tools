@@ -1,0 +1,53 @@
+name: "Flying Sword"
+type: "construct"
+size: "small"
+ac: 17
+hp: 17
+hit_dice: "5d6"
+cr: "1/4"
+xp: 50
+
+speed:
+  walk: 30
+  fly: 50
+
+abilities:
+  str: +1
+  dex: +2
+  con: +0
+  int: -5
+  wis: -3
+  cha: -5
+
+passive_perception: 7
+
+actions:
+  - {name: "Longsword", atk: +3, dmg: "5 (1d8+1) slash" }
+  - {name: "Shortsword", atk: +4, dmg: "5 (1d6+2) pierce"}
+
+resistances:
+  - "acid"
+
+saving_throws:
+  dex: +4
+
+immunities:
+  - "psychic"
+  - "blinded"
+  - "charmed"
+  - "deafened"
+  - "frightened"
+  - "paralyzed"
+  - "petrified"
+  - "poisoned"
+
+vulnerabilities:
+  - "buldgeoning"
+
+special:
+  - "blindsight:60"
+  - ["Antimagic Susceptibility", "Incapacitated in antimagic field. Must CON.SAV against Dispel Magic, or fall unconcious for 1 min"]
+  - ["False Appearance", "Indistinguishable from normal sword when motionless."]
+
+
+

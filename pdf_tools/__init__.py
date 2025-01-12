@@ -6,4 +6,3 @@ from .object import Object
 from .path import Path
 from PIL import Image
 from .img_tools import image_bbox, crop_transparent_pixels
-

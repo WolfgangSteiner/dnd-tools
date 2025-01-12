@@ -1,11 +1,13 @@
 from dnd_tools import Character
 
 tombur = Character(
-    name="Tombur Rockseeker", level=2, ancestry="Mountain Dwarf", profession="Wizard",
+    name="Tombur Rockseeker", ancestry="Mountain Dwarf", profession="Wizard",
+    level=2, xp=300,
     str=10, dex=12, con=16, int=18, wis=10, cha=12,
     skills=["acrobatics", "performance", "insight", "investigation"],
     saving_throws=["int", "wis"],
-    ini=1, ac=17, max_hp=18, hit_dice="2d6", spd=25)
+    ini=1, ac=17, max_hp=18, hit_dice="2d6", spd=25,
+    gp=30)
 
 tombur.attacks = [
     "Quarterstaff|+2|1d6",
@@ -28,6 +30,26 @@ tombur.feats_traits = [
     "Darkvision",
     "Arkane Recovery",
     "Evoker",
+]
+
+tombur.gear = [
+    "Chainmail",
+    "Quarterstaff",
+    "Spellbook",
+    "Lute",
+]
+
+tombur.backpack = [
+    "Component Pouch",
+    "Book of Lore",
+    "Costume",
+]
+
+tombur.items = [
+    "Ink & Pen",
+    "10 Parchment",
+    "Bag of Sand",
+    "Small knife"
 ]
 
 tombur.personality = "I can defuse any tension in the room."

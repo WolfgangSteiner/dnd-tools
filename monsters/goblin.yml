@@ -1,0 +1,43 @@
+name: "Goblin"
+type: "humanoid"
+ac: 15
+hp: 7
+hit_dice: "2d6"
+cr: 1/4 
+xp: 50
+
+speed:
+  walk: 30
+  climb: 15
+
+abilities:
+  str: -1
+  dex: +2
+  con: +0
+  int: +0
+  wis: -1
+  cha: -1
+
+saving_throws:
+  dex: +4
+
+skills:
+  stealth: +6
+  perception: +2
+
+passive_perception: 9
+
+
+specials:
+  - darkvision
+  - ["nimble escape", "can use Disengage or Hide action as bonus action on each turns"]
+
+actions:
+  - {name: "scimitar", atk: +4, dmg: "5(1d6+2)"}
+  - {name: "shortbow", atk: +4, rng: "80/320", dmg: "5(1d6+2)"}
+
+gear:
+  - leather armor
+  - shield
+  - scimitar
+  - shortbow

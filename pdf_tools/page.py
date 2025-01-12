@@ -11,6 +11,7 @@ from reportlab.graphics import renderPDF
 from PIL import Image, ImageEnhance, ImageOps
 import tempfile
 from .img_tools import crop_transparent_pixels
+from . import img_tools
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 import os
@@ -26,15 +27,17 @@ def get_arg(arg, default):
     return default if arg is None else arg
 
 KERNING = {"SouvenirDemi":{
-    "At":-0.15, "Ja":-0.1, "Pa":-0.3, "Pe":-0.1, "Pr":-0.15, "Ro":-0.1, "To":-0.25, "Tr":-0.2, "Wa":-0.3, "We":-0.15}}
-
+    "At":-0.15, "Ja":-0.1, "Pa":-0.3, "Pe":-0.1, "Pr":-0.1, "Ro":-0.1, "Th":-0.25, "To":-0.25, "Tr":-0.2, "Wa":-0.3, "We":-0.15}}
+KERNING["SouvenirBold"] = KERNING["SouvenirDemi"]
 
 class Page:
+    A3 = pagesizes.A3
     A4 = pagesizes.A4
     A5 = pagesizes.A5
     A6 = pagesizes.A6
 
-    def __init__(self, filename, pagesize=pagesizes.A4, margin=5, landscape=False):
+    def __init__(self, filename=None, pagesize=pagesizes.A4, margin=5, landscape=False):
+        filename = get_arg(filename, "pdf/out.pdf")
         pagesize = pagesizes.landscape(pagesize) if landscape == True else pagesize
         self.c = canvas.Canvas(filename)
         self.font_path = "~/.local/share/fonts" 
@@ -50,6 +53,20 @@ class Page:
         self.fill_color = 0
         self.font_size = 10
         self.small_caps_factor = 0.65
+
+        self.register_font("souvenir/souvenir.ttf", "Souvenir")
+        self.register_font("souvenir/souvenir_demi.ttf", "SouvenirDemi")
+        self.register_font("souvenir/souvenir_bold.ttf", "SouvenirBold")
+        self.register_font("souvenir/souvenir_italic.ttf", "SouvenirItalic")
+        self.register_font("souvenir/souvenir_bold_italic.ttf", "SouvenirBoldItalic")
+        self.register_font("roboto_slab/roboto_slab_bold.ttf", "RobotoSlabBold")
+        self.register_font("roboto_slab/roboto_slab_semibold.ttf", "RobotoSlab-SemiBold")
+        self.register_font("roboto_slab/roboto_slab_regular.ttf", "RobotoSlab")
+        self.register_font("tangerine/tangerine_regular.ttf", "Tangerine")
+        self.register_font("tangerine/tangerine_bold.ttf", "TangerineBold")
+        self.register_font_family("Souvenir", "Souvenir", bold="SouvenirBold", italic="SouvenirItalic")
+        self.register_font_family("RobotoSlab", "RobotoSlab", bold="RobotoSlabBold")
+        self.layout_rect_list = []
 
     @property
     def state(self):
@@ -77,12 +94,36 @@ class Page:
         self.state.stroke_color = value
 
 
-    def set_pagesize(self, pagesize):
-        w, h = pagesize
-        self.pagesize = pagesize
+    def set_pagesize(self, pagesize, landscape=False):
+        if landscape:
+            h, w = pagesize
+        else:
+            w, h = pagesize
+        self.pagesize = (w,h)
         self.w = w / mm
         self.h = h / mm
-        self.c.setPageSize(pagesize) 
+        self.c.setPageSize(self.pagesize)
+
+    def set_landscape(self):
+        new_w = max(self.w, self.h)
+        new_h = min(self.w, self.h)
+        self.w = new_w
+        self.h = new_h
+        self.pagesize = (new_w * mm, new_h * mm)
+        self.c.setPageSize(self.pagesize)
+
+    def set_portrait(self):
+        new_w = min(self.w, self.h)
+        new_h = max(self.w, self.h)
+        self.w = new_w
+        self.h = new_h
+        self.pagesize = (new_w * mm, new_h * mm)
+        self.c.setPageSize(self.pagesize)
+        
+
+    def set_page_rect(self, rect):
+        self.set_pagesize((rect.w * mm, rect.h * mm))
+
 
     @property
     def drawable_rect(self):
@@ -107,9 +148,13 @@ class Page:
     def y2(self):
         return self.h - self.top_margin
 
-    def draw_rect(self, r, stroke_width=None, stroke_hue=None, radius=None):
-        self.c.setStrokeGray(self.stroke_color if stroke_hue == None else stroke_hue)
-        self.c.setLineWidth(self.stroke_width if stroke_width == None else stroke_width)
+
+    def draw_rect(self, r, stroke_width=None, stroke_color=None, radius=None):
+        self.push_state()
+        stroke_color = get_arg(stroke_color, self.stroke_color)
+        stroke_width = get_arg(stroke_width, self.stroke_width)
+        self.c.setStrokeGray(stroke_color)
+        self.c.setLineWidth(stroke_width)
         if radius is not None:
             radius = radius
         elif r.radius is not None:
@@ -121,6 +166,7 @@ class Page:
             self.c.roundRect(r.x * mm, r.y * mm, r.w * mm, r.h * mm, radius * mm, stroke = 1, fill = 0)
         else:
             self.c.rect(r.x * mm, r.y * mm, r.w * mm, r.h * mm, stroke=1, fill=0)
+        self.pop_state()
 
     def fill_rect(self, rect, radius=0.0, fill_color=None):
         self.c.saveState()
@@ -160,6 +206,12 @@ class Page:
             en_space = small_font_size / 2 / mm
             x = pos.x
             is_first = True
+
+
+            while text.startswith(" "):
+                x += en_space
+                text = text[1:]
+
             for word in text.split():
                 if is_first:
                     is_first = False
@@ -250,6 +302,9 @@ class Page:
         path = os.path.expanduser(self.font_path +  "/" + path)
         pdfmetrics.registerFont(TTFont(name, path))
 
+    def register_font_family(self, name, normal=None, bold=None, italic=None):
+        pdfmetrics.registerFontFamily(name, normal=normal, bold=bold, italic=italic)
+
     def set_font(self, name):
         self.font = name
 
@@ -265,13 +320,14 @@ class Page:
         self.c.setFont(self.font, self.font_size)
         self.c.drawString(pos_pt.x, pos_pt.y, text)
 
-    def draw_text_aligned(self, text, rect, horizontal_align="center", vertical_align="center", font=None, font_size=None, small_caps=False, color=0.0):
+    def draw_text_aligned(self, text, rect, horizontal_align="center", vertical_align="center", font=None, font_size=None, small_caps=False, color=0.0, horizontal_gap=0, vertical_gap=0):
         text = str(text)
         bbox = self.text_bounding_box(text, font=font, font_size=font_size, small_caps=small_caps)
-        bbox = bbox.align_to_rect(rect, horizontal_align, vertical_align)
+        bbox = bbox.align_to_rect(rect, horizontal_align, vertical_align, horizontal_gap=horizontal_gap, vertical_gap=vertical_gap)
         self.draw_text(bbox.pos, text, font=font, font_size=font_size, small_caps=small_caps, color=color)
+        return bbox.copy()
 
-    def layout_text_aligned(self, text, rect, font=None, font_size=None, min_font_size=6, line_spacing=1.2, horizontal_align="center", vertical_align="center"):
+    def layout_text_aligned(self, text, rect, font=None, font_size=None, min_font_size=6, line_spacing=1.2, horizontal_align="center", vertical_align="center", auto_fit=True):
         """
         Draw multi-line text within a specified rectangle on the ReportLab canvas.
         Automatically reduces the font size until the text fits within the rectangle.
@@ -304,7 +360,8 @@ class Page:
             # Create a Paragraph object
             para = Paragraph(formatted_text, style)
             # Wrap the paragraph to calculate its width and height
-            para_width, para_height = para.wrap(rect.w * mm, rect.h * mm)
+            wrap_height = rect.h * mm if auto_fit == True else 0
+            para_width, para_height = para.wrap(rect.w * mm, wrap_height)
             para_width /= mm
             para_height /= mm
 
@@ -316,7 +373,7 @@ class Page:
                 max_width = max(line_width, max_width)
             para_width = max_width 
 
-            if para_height <= rect.h:
+            if para_height <= rect.h or auto_fit == False:
                 # Text fits within the rectangle, draw it
                 break
 
@@ -327,7 +384,8 @@ class Page:
         para_rect = Rectangle(0, 0, para_width, para_height).align_to_rect(rect, horizontal_align=horizontal_align, vertical_align=vertical_align)
         para_rect *= mm
         para.drawOn(self.c, para_rect.x, para_rect.y)
-        return current_font_size
+        para_rect /= mm
+        return para_rect.copy()
 
 
     def draw_line(self, line, stroke_color=None, stroke_width=None):
@@ -347,6 +405,20 @@ class Page:
             stroke_width = self.stroke_width
         self.c.setLineWidth(stroke_width)
         self.c.circle(pos.x * mm, pos.y * mm, radius * mm, fill=0, stroke=1)
+
+    def draw_arc(self, pos, radius, start_angle, end_angle, stroke_color=None, stroke_width=None):
+        stroke_color = get_arg(stroke_color, self.stroke_color)
+        stroke_width = get_arg(stroke_width, self.stroke_width)
+        self.c.saveState()
+        self.c.setStrokeGray(stroke_color)
+        self.c.setLineWidth(stroke_width)
+        x1 = pos.x - radius
+        x2 = pos.x + radius
+        y1 = pos.y - radius
+        y2 = pos.y + radius
+        self.c.arc(x1*mm, y1*mm, x2*mm, y2*mm, start_angle, end_angle) 
+        self.c.restoreState() 
+
 
     def draw_dot(self, pos, lightness=0):
         x = pos.x * mm
@@ -397,47 +469,48 @@ class Page:
         renderPDF.draw(svg, self.c, x, y)
 
     
-    def draw_image(self, filename, rect, background_color=(255,255,255),flip_vertically=False,rotate=False, rotate_to_fit=False, gray_scale=True, contrast_enhance=2.0, crop=None):
+    def draw_image(self, img, rect, background_color=(255,255,255),flip_vertically=False,rotate=False, rotate_to_fit=False, gray_scale=True, contrast_enhance=2.0, crop=None):
         with tempfile.NamedTemporaryFile(suffix=".png", delete=True) as tmp:
             tmp_filename = tmp.name
-            with Image.open(filename) as img:
-                img = crop_transparent_pixels(img)
-                img_w, img_h = img.size
+            if isinstance(img, str):
+                filename = img
+                img = Image.open(img)
+            else:
+                filename = tmp_filename
 
-                if crop:
-                    left_crop = crop[0] * img_w
-                    right_crop = img_w - crop[1] * img_w
-                    top_crop = crop[2] * img_h
-                    bottom_crop = img_h - crop[3] * img_h
-                    crop_box = (left_crop, top_crop, right_crop, bottom_crop)
-                    img = img.crop(crop_box)
+            img = crop_transparent_pixels(img)
+            img_w, img_h = img.size
+
+            if crop:
+                left_crop, right_crop, top_crop, bottom_crop = crop
+                img = img_tools.crop(img, left_crop, right_crop, top_crop, bottom_crop) 
+                filename = tmp_filename
+            
+            if rotate_to_fit and (img_w > img_h) != (rect.w > rect.h):
+                rotate = True
+
+            if flip_vertically == True:
+                img = img_tools.flip_vertically(img)
+                filename = tmp_filename
+
+            if rotate:
+                img = img_tools.rotate(img)
+                filename = tmp_filename
+
+            if img.mode == "RGBA":
+                with Image.new("RGB", img.size, background_color) as background:
+                    background.paste(img, mask=img.split()[3])
+                    img = background
                     filename = tmp_filename
-                
-                if rotate_to_fit and (img_w > img_h) != (rect.w > rect.h):
-                    rotate = True
+            
+            if gray_scale:
+                img = img_tools.enhance_contrast(img, contrast_enhance)
+                img = img_tools.equalize(img)
+                filename = tmp_filename
 
-                if flip_vertically == True:
-                    img = img.transpose(Image.FLIP_TOP_BOTTOM)
-                    filename = tmp_filename
 
-                if rotate:
-                    img = img.transpose(Image.ROTATE_90)
-                    filename = tmp_filename
-
-                if img.mode == "RGBA":
-                    with Image.new("RGB", img.size, background_color) as background:
-                        background.paste(img, mask=img.split()[3])
-                        img = background
-                        filename = tmp_filename
-                
-                if gray_scale:
-                    enh = ImageEnhance.Contrast(img.convert('L'))
-                    img = enh.enhance(contrast_enhance)
-                    img = ImageOps.equalize(img)
-                    filename = tmp_filename
-
-                if filename == tmp_filename:
-                    img.save(filename)
+            if filename == tmp_filename:
+                img.save(filename)
 
             self.c.drawImage(filename, rect.x*mm, rect.y*mm, width=rect.w*mm, height=rect.h*mm, preserveAspectRatio=True)
 
@@ -511,5 +584,89 @@ class Page:
 
         [self.draw_line(Line(Point(x, y1 - gap - length), Point(x, y1 - gap))) for x in vertical_marks ]
         [self.draw_line(Line(Point(x, y2 + gap), Point(x, y2 + gap + length))) for x in vertical_marks ]
+
+    def push_layout_rect(self, rect, draw_func):
+        self.layout_rect_list.append((rect, draw_func))
+
+    def get_min_height_layout_rect(self):
+        if len(self.layout_rect_list):
+            return sorted(
+                self.layout_rect_list,
+                key=lambda item: item[0].h)[0]
+        else:
+            return None
+
+    def get_min_width_layout_rect(self):
+        if len(self.layout_rect_list):
+            return sorted(
+                self.layout_rect_list,
+                key=lambda item: item[0].w)[0]
+        else:
+            return None
+
+    def _keep_free_rect(self, rect):
+        for r,_ in self.layout_rect_list:
+            if rect.w >= r.w and rect.h >= r.h:
+                return True
+        return False
+
+
+    def _find_layout_rect_for_free_rect(self, free_rect):
+        for i,item in enumerate(self.layout_rect_list):
+            r = item[0]
+            if r.w <= free_rect.w and r.h <= free_rect.h:
+                del self.layout_rect_list[i]
+                return item
+        return None
+
+
+    def place_bbox(self, union_rect, bbox):
+        if bbox.w + union_rect.x2 > self.drawable_rect.x2:
+            pos = union_rect.bottom_left()
+            union_rect = Rectangle(pos.x, pos.y, 0, 0)
+
+        if union_rect.y2 - bbox.h < self.drawable_rect.y1:
+            self.new_self()
+            union_rect = Rectangle(self.drawable_rect.x1, self.drawable_rect.y2, 0, 0)
+
+        pos = union_rect.top_right()
+        bbox = bbox.translate(pos - Point(0, bbox.h))
+        union_rect = union_rect.union(bbox)
+
+        return union_rect, bbox
         
-        
+    def perform_layout(self, rows_first=True):
+        free_rects = [self.drawable_rect]
+        self.layout_rect_list.sort(key=lambda item: item[0].h, reverse=True)
+        while self.layout_rect_list:
+            if not free_rects:
+                self.new_page()
+                free_rects.insert(0, self.drawable_rect)
+            free_rect = free_rects.pop(0)
+            item = self._find_layout_rect_for_free_rect(free_rect)
+            if item is not None:
+                draw_rect, draw_func = item
+                draw_rect = draw_rect.align_to_rect(free_rect, "left", "top")
+                draw_func(self, draw_rect)
+                above_rect, below_rect = free_rect.top_partition(height=draw_rect.h)
+                _, right_rect = above_rect.left_partition(width=draw_rect.w)
+                free_rects.insert(0,below_rect)
+                free_rects.insert(0,right_rect)
+
+    def perform_layout_columns_first(self):
+        free_rects = [self.drawable_rect]
+        self.layout_rect_list.sort(key=lambda item: item[0].w, reverse=True)
+        while self.layout_rect_list:
+            if not free_rects:
+                self.new_page()
+                free_rects.insert(0, self.drawable_rect)
+            free_rect = free_rects.pop(0)
+            item = self._find_layout_rect_for_free_rect(free_rect)
+            if item is not None:
+                draw_rect, draw_func = item
+                draw_rect = draw_rect.align_to_rect(free_rect, "left", "top")
+                draw_func(self, draw_rect)
+                left_rect, right_rect = free_rect.left_partition(width=draw_rect.w)
+                _, below_rect = left_rect.top_partition(height=draw_rect.h)
+                free_rects.insert(0,right_rect)
+                free_rects.insert(0,below_rect)

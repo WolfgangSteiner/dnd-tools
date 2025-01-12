@@ -5,7 +5,7 @@ from pdf_tools import Page,Rectangle,Point
 
 
 p = Page("pdf/spell_cards.pdf")
-page_rect = p.page_rect()
+page_rect = p.page_rect
 
 rects = p.subdivide(3,3)
 
@@ -27,6 +27,7 @@ spells_cleric_cantrip = ["Guidance", "Light", "Mending", "Resistance", "Sacred F
 
 spells = spells_cleric_lv1 + spells_cleric_cantrip
 
+spells = ["hunters_mark", "thunderwave", "grease"] 
 for i, spell in enumerate(spells):
     spell = spells[i]
     r = rects[i%9]

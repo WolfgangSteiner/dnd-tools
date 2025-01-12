@@ -1,0 +1,38 @@
+name: Skeleton
+type: undead
+size: medium
+ac: 13
+hp: 13
+hit_dice: 2d8+4
+cr: 1/4
+xp: 50
+
+speed:
+  walk: 30
+
+abilities:
+  str: +0
+  dex: +2
+  con: +2
+  int: -2
+  wis: -1
+  cha: -3
+
+passive_perception: 9
+
+actions:
+  - {name: Shortsword, atk: +4, dmg: "5 (1d6+2) pierce"}
+  - {name: Shortbow, atk: +4, dmg: "5 (1d6+2) pierce", rng:80/320}
+
+immunities:
+  - poison
+  - exhaustion
+
+vulnerabilities:
+  - buldgeoning
+
+specials:
+  - darkvision:60
+
+
+

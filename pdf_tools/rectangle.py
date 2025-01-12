@@ -62,6 +62,12 @@ class Rectangle:
     def __mul__(self, factor):
         return Rectangle(self.x * factor, self.y * factor, self.w * factor, self.h * factor)
 
+    def __add__(self, offset):
+        return Rectangle(self.x + offset.x, self.y + offset.y, self.w, self.h)
+
+    def __truediv__(self, divisor):
+        return Rectangle(self.x / divisor, self.y / divisor, self.w / divisor, self.h / divisor)
+
     def top_left(self):
         return Point(self.x1, self.y2)
 
@@ -73,6 +79,18 @@ class Rectangle:
 
     def bottom_right(self):
         return Point(self.x2, self.y1)
+
+    def left_center(self):
+        return Point(self.x1, self.y + 0.5 * self.h)
+
+    def right_center(self):
+        return Point(self.x2, self.y + 0.5 * self.h)
+
+    def top_center(self):
+        return Point(self.x1 + 0.5 * self.w, self.y2)
+
+    def bottom_center(self):
+        return Point(self.x1 + 0.5 * self.w, self.y1)
 
     def center(self):
         return Point(self.x + self.w / 2, self.y + self.h / 2)
@@ -89,17 +107,34 @@ class Rectangle:
     def top_edge(self):
         return Line(Point(self.x1, self.y2), Point(self.x2, self.y2))
 
+    def top_left_rectangle(self, w, h):
+        return Rectangle(self.x1, self.y2 - h, w, h)
+
+    def bottom_right_rectangle(self, w, h):
+        return Rectangle(self.x2 - w, self.y1, w, h)
+
     def edges(self):
         return [self.bottom_edge(), self.right_edge(), self.top_edge(), self.left_edge()]
 
     def __repr__(self):
         return f"[{self.x:.2f}, {self.y:.2f}, {self.x2:.2f}, {self.y2:.2f}]"
 
+    def is_landscape(self):
+        return self.w > self.h
+
+    def contains_rect(self, rect):
+        return self.x1 <= rect.x1 and self.x2 >= rect.x2 and self.y1 <= rect.y1 and self.y2 >= rect.y2
+
     def align_to_rect(self, rect, horizontal_align="center", vertical_align="center", horizontal_gap=0, vertical_gap=0):
         res = Rectangle(self.x, self.y, self.w, self.h)
         res = res.horizontal_align_to_rect(rect, align=horizontal_align, gap=horizontal_gap)
         res = res.vertical_align_to_rect(rect, align=vertical_align, gap=vertical_gap)
         return res
+
+    def move_inside_rect(self, rect):
+        x = min(max(self.x, rect.x1), rect.x2 - self.w)
+        y = min(max(self.y, rect.y1), rect.y2 - self.h)
+        return Rectangle(x, y, self.w, self.h)
 
     def horizontal_align_to_rect(self, rect, align="center", gap=0):
         res = Rectangle(self.x, self.y, self.w, self.h)

@@ -27,11 +27,11 @@ def format_modifier(page, modifier, rect, font=None, font_size=None):
     page.draw_text(bbox.pos + offset, sign, font=font, font_size=font_size)
 
 
-def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanized=False, draw_frame=True, is_modifier=False, small_caps=True):
+def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanized=False, draw_frame=True, is_modifier=False, small_caps=True, value_color=0.0):
     page.font = "SouvenirDemi"
     page.stroke_width = 0.4 
     page.stroke_color = 0
-    if ":" in label:
+    if ":=" in label:
         label, id = label.split(":=")
     else:
         id = id_for_label(label)
@@ -41,7 +41,6 @@ def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanize
             page.draw_rect_humanized(rect, stroke_width=0.4, curvature_spread=0.2, point_spread=0.25, num_strokes=2)
         else:
             page.draw_rect(rect, radius=2, stroke_width=1)
-
 
     if value is None:
         value = getattr(values, id, "")
@@ -82,10 +81,10 @@ def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanize
             value = value // 5
         if value:
             value_str = f"{value:+}" if is_modifier else str(value)
-            page.draw_text_aligned(value_str, value_box, font_size=value_font_size)
+            page.draw_text_aligned(value_str, value_box, font_size=value_font_size, color=value_color)
         #page.draw_line_humanized(top_row.bottom_edge())
 
-def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, humanized=False, draw_frame=True, small_caps=True, font_size=10, font="RobotoSlab", horizontal_align="center"):
+def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, humanized=False, draw_frame=True, small_caps=True, font_size=10, font="RobotoSlab", horizontal_align="center", vertical_align="center"):
     page.font = "SouvenirDemi"
     page.stroke_width = 0.4 
     page.stroke_color = 0
@@ -103,11 +102,11 @@ def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, hum
 
     top_row, value_box = rect.top_partition(height=4)
     label_rect, label_align = top_row, "left"
-    value_box = rect.apply_margin(2,2)
+    value_box = rect.apply_margin(2,top=4,bottom=2)
     if title:
         page.draw_text_aligned(title, label_rect.apply_margin(1,1), horizontal_align=label_align, vertical_align="top", small_caps=small_caps, font_size=8)
         if value:
-            page.layout_text_aligned(value, value_box, font=font, font_size=font_size, horizontal_align=horizontal_align)
+            page.layout_text_aligned(value, value_box, font=font, font_size=font_size, horizontal_align=horizontal_align, vertical_align=vertical_align)
 
 
 def draw_fields(page, rect, labels, values=SimpleNamespace(), humanized=False, num_rows=1, num_cols=None, field_width=None, field_height=None, horizontal_align="center", vertical_align="center", gap=2):
@@ -142,6 +141,7 @@ def draw_coins_field(page, rect, character):
     gold_rect, silver_rect  = rect.subdivide(2, 1)
     page.draw_line_humanized(gold_rect.apply_margin(0, 0).bottom_edge(), stroke_width=0.4) 
     page.draw_text_aligned("gp", gold_rect.apply_margin(1,1), horizontal_align="left", vertical_align="top", font_size=8, small_caps=True)
+    page.draw_text_aligned(str(character.gp), gold_rect, color=0.75)
     page.draw_text_aligned("sp", silver_rect.apply_margin(1,1), horizontal_align="left", vertical_align="top", font_size=8, small_caps=True)
 
 def draw_ability_fields(page, rect, values=SimpleNamespace(), humanized=True, num_rows=1, num_cols=6):
@@ -166,38 +166,28 @@ def draw_name_exp_fields(page, rect, values=SimpleNamespace(), humanized=True, x
     draw_field(page, rect, "", humanized=humanized)
     left_field,lvl_field = rect.right_partition(width=xp_field_width)
     page.draw_line_humanized(lvl_field.left_edge())
-    draw_field(page, lvl_field, "XP", values=values, draw_frame=False) 
+    draw_field(page, lvl_field, "XP", values=values, draw_frame=False, value_color=0.75) 
     name_field, type_field = left_field.top_partition(0.6)
-    page.draw_text_aligned(values.name, name_field, font_size=14, small_caps=True)
+    name_font = get_arg(values.font, "SouvenirDemi")
+    page.draw_text_aligned(values.name, name_field, font=name_font, font_size=14, small_caps=(name_font=="SouvenirDemi"))
     ancestry = capitalize_words(ancestry_adjective(values.ancestry))
     type_str = f"Lvl {values.level} {ancestry} {values.profession}"
     page.draw_text_aligned(type_str, type_field, font_size=9, vertical_align="top", small_caps=True)
 
-def draw_skills(page, rect, values=SimpleNamespace(), num_rows=8, humanized=True, heading=True):
+def draw_skills(page, rect, character=SimpleNamespace(), num_rows=8, humanized=True, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
     header, body = rect.apply_margin(0,0).top_partition(height=7)
     header, pb_field = header.left_partition(width=20)
-    pb_label_rect, pb_value_rect = pb_field.right_partition(width=11)
-    page.draw_text_aligned("Prof. Bonus", pb_label_rect.apply_margin(2,2), "left", "center", small_caps=True)
-    page.draw_text_aligned(f"{values.proficiency_bonus:+}", pb_value_rect.apply_margin(4,2), "right", "center")
+    page.draw_text_aligned(f"Prof. Bonus  {character.proficiency_bonus:+}", pb_field.apply_margin(2,2), "center", "center", small_caps=True)
     page.draw_line_humanized(pb_field.bottom_edge(), stroke_width=0.4)
     page.draw_line_humanized(pb_field.left_edge(), stroke_width=0.4)
     #page.draw_line_humanized(pb_value_rect.left_edge(), stroke_width=0.4)
     page.draw_text_aligned("Skills", header.apply_margin(4,2), "left", "center", font_size=10, small_caps=True)
     rows = body.apply_margin(2,0).subdivide(num_rows, 1)
-    if not hasattr(values, "skills"):
+    if not hasattr(character, "skills"):
         return
-    for i,skill in enumerate(sort_skills(values.skills)):
-        row = rows[i]
-        skill_field, modifier_field = row.apply_margin(2,0).right_partition(width=5)
-        skill_str = snake_case_to_capitalized_words(skill)
-        ability = ability_for_skill(skill)
-        ability_modifier = get_ability_modifier(values, ability)
-        skill_modifier = ability_modifier + values.proficiency_bonus
-        page.draw_line_humanized(rows[i].bottom_edge(), stroke_width=0.4)
-        page.draw_text_aligned(skill_str, skill_field, "left", "center", small_caps=True)
-        page.draw_text_aligned(f"{skill_modifier:+}", modifier_field, "right", "center")
-
+    items = [f"{capitalize_words(skill)}|{character.skill_modifier(skill):+}" for skill in character.skills]
+    draw_list(page, body, "Skill|Modifier", items, num_cols=2, subdivide_factors=(0.8,0.1), align="l|r", heading=False)
 
 
 def draw_list_row(page, rect, item, subdivide_factors=None, align=None, margin=2, draw_separator=True):
@@ -212,7 +202,9 @@ def draw_list_row(page, rect, item, subdivide_factors=None, align=None, margin=2
         page.draw_line_humanized(row_rect.bottom_edge(), stroke_width=0.4)
          
 
-def draw_list(page, rect, title, items, num_rows, num_cols, subdivide_factors=None, align=None, heading=True):
+def draw_list(page, rect, title, items, num_cols, subdivide_factors=None, align=None, heading=True):
+    page.font_size = 8 
+    num_rows = max(8, min(12, len(items))) # TODO compute limits based on geometry
     if heading:
         header, rect = rect.apply_margin(0,0).top_partition(height=7)
         draw_list_row(page, header, title, subdivide_factors, align, draw_separator=False)
@@ -223,23 +215,24 @@ def draw_list(page, rect, title, items, num_rows, num_cols, subdivide_factors=No
         draw_list_row(page, row, item, subdivide_factors, align, draw_separator=(i!=len(items)-1))
 
 
-def draw_attacks(page, rect, values=SimpleNamespace(), num_rows=7, humanized=True, gap=2, heading=True):
+def draw_attacks(page, rect, values=SimpleNamespace(), humanized=True, gap=2, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    draw_list(page, rect, "Attack|Hit|Dmg", values.attacks, num_rows, 3, (0.5,0.2, 0.3), align="l|r|r") 
+    draw_list(page, rect, "Attack|Hit|Dmg", values.attacks, num_cols=3, subdivide_factors=(0.5,0.2, 0.3), align="l|r|r") 
 
 
-def draw_other_stats_fields(page, rect, values=SimpleNamespace(), humanized=True, gap=2):
-    draw_fields(page, rect, ("AC", "+INI", "SPD", "Pass Per:=passive_perception", "Hit Dice", ""), values=values, humanized=True)
+def draw_other_stats_fields(page, rect, character=SimpleNamespace(), humanized=True, gap=2):
+    extra_field = "Spell DC:=spell_saving_dc" if character.is_spellcaster else ""
+    draw_fields(page, rect, ("AC", "+INI", "SPD", "Pass Per:=passive_perception", "Hit Dice", extra_field), values=character, humanized=True)
 
 
 def draw_proficiency_field(page,rect, character=SimpleNamespace(), humanized=True, gap=2, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    draw_list(page, rect, "Proficiencies", character.proficiencies, num_rows=8, num_cols=1, heading=heading)
+    draw_list(page, rect, "Proficiencies", character.proficiencies, num_cols=1, heading=heading)
 
 
 def draw_feats_traits(page,rect, character=SimpleNamespace(), humanized=True, gap=2, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    draw_list(page, rect, "Feats & Traits", character.feats_traits, num_rows=8, num_cols=1, heading=heading)
+    draw_list(page, rect, "Feats & Traits", character.feats_traits, num_cols=1, heading=heading)
 
 
 def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=True):
@@ -277,12 +270,12 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
 
     hp_rect = Rectangle(w=name_rect.w/2).horizontal_align_to_rect(name_rect, "left").vertical_align_to_rect(other_stats_rect, "block")
 
-    draw_other_stats_fields(page, other_stats_rect, values=character)
+    draw_other_stats_fields(page, other_stats_rect, character=character)
     draw_hp_field(page, hp_rect, character=character)
 
     draw_coins_field(page, Rectangle(w=16,h=16).align_to_rect(name_rect, horizontal_align="right", vertical_align="below", vertical_gap=gap), character)
 
-    draw_skills(page, skill_rect, values=character)
+    draw_skills(page, skill_rect, character)
     draw_attacks(page, attack_rect, values=character)
     draw_proficiency_field(page, proficiency_rect, character=character)
     draw_feats_traits(page, feats_traits_rect, character)
@@ -318,7 +311,7 @@ def draw_character_sheet_a4_landscape(page, rect, character=SimpleNamespace(), h
     name_rect, right_block = right_block.top_partition(height=field_height, gap=gap) 
 
     if character.is_spellcaster:
-        spell_slots_rect = Rectangle(h=8).horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(rect, "top")
+        spell_slots_rect = Rectangle(h=16).horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(other_stats_rect, "block")
         draw_spell_slots(page, spell_slots_rect, character)
 
     hp_rect = Rectangle(w=name_rect.w/2, h=field_height).align_to_rect(name_rect, "left", "below", vertical_gap=gap)
@@ -326,42 +319,63 @@ def draw_character_sheet_a4_landscape(page, rect, character=SimpleNamespace(), h
 
 
     attack_rect, skills_rect, proficiencies_rect, feats_traits_rect = left_block.subdivide(2,2,gap,gap)
-    gear_rect = Rectangle().horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(skills_rect, "block")
-    personality_rect = gear_rect.duplicate_below(gap)
-    items_rect = gear_rect.duplicate_right(gap)
+    gear_backpack_rect = Rectangle().horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(skills_rect, "block")
+    gear_rect, backpack_rect = gear_backpack_rect.left_partition(0.5, gap=2)
+    personality_rect = gear_backpack_rect.duplicate_below(gap)
+    items_rect = gear_backpack_rect.duplicate_right(gap)
     notes_rect = items_rect.duplicate_below(gap)
+    items_rect, expendables_rect = items_rect.bottom_partition(height=20, gap=2)
 
     draw_name_exp_fields(page, name_rect, values=character, humanized=humanized)
     draw_ability_fields(page, ability_rect, values=character, humanized=humanized)
-    draw_other_stats_fields(page, other_stats_rect, values=character)
+    draw_other_stats_fields(page, other_stats_rect, character=character)
     draw_hp_field(page, hp_rect, character=character)
     draw_coins_field(page, coins_rect, character)
     draw_attacks(page, attack_rect, values=character)
-    draw_skills(page, skills_rect, values=character)
+    draw_skills(page, skills_rect, character)
     draw_proficiency_field(page, proficiencies_rect, character=character)
     draw_feats_traits(page, feats_traits_rect, character)
-    draw_inventory(page, gear_rect, character)
+    draw_gear(page, gear_rect, character)
+    draw_backpack(page, backpack_rect, character)
     draw_items(page, items_rect, character)
+    draw_expendables(page, expendables_rect)
     draw_personality(page, personality_rect, character, gap=gap)
-    draw_text_field(page, notes_rect, "Notes", humanized=True)
+    draw_text_field(page, notes_rect, "Notes", value="\n".join(character.notes), humanized=True, vertical_align="top", font_size=8)
 
-
-def draw_inventory(page, rect, character, heading=False, gap=2):
-    draw_text_field(page, rect, "Gear", humanized=True)
-    for i,r in enumerate(rect.apply_margin(2,2).subdivide(10,2, horizontal_gap=2, col_wise=True)):
-        page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
+def draw_inventory(page, rect, inventory_list, num_rows, num_cols, title="", gap=2):
+    draw_text_field(page, rect, title, humanized=True)
+    for i,r in enumerate(rect.apply_margin(2,2).subdivide(num_rows, num_cols, horizontal_gap=2, col_wise=True)):
+        page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6)
+        if i < len(inventory_list):
+            page.draw_text_aligned(inventory_list[i], r.apply_margin(3, 1), horizontal_align="left", vertical_align="bottom", font="SouvenirBold", font_size=8, small_caps=True)
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
+
+def draw_gear(page, rect, character, heading=False, gap=2):
+    draw_inventory(page, rect, character.gear, 10, 1, title="Gear")
+
+def draw_backpack(page, rect, character, heading=False, gap=2):
+    draw_inventory(page, rect, character.backpack, 10, 1, title="Backpack")
 
 def draw_items(page, rect, character, heading=False, gap=2):
-    items_rect, ammo_rect = rect.bottom_partition(height=10, gap=gap)
-    draw_text_field(page, items_rect, "Items", humanized=True)
-    for i,r in enumerate(items_rect.apply_margin(2,2).subdivide(8,2, horizontal_gap=2, col_wise=True)):
-        page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
-        page.draw_line(r.bottom_edge(), stroke_width=0.5)
-    draw_text_field(page, ammo_rect, "Ammo", humanized=True)
-    for r in ammo_rect.apply_margin(left=10, right=10, y=1).subdivide(2, 10):
+    draw_inventory(page, rect, character.items, 8, 2, title="Items")
+
+
+def draw_expendables(page, rect):
+    page.draw_rect_humanized(rect, stroke_width=0.4)
+    rect = rect.apply_margin(2,2)
+    ammo_rect, rations_rect, torches_rect = rect.subdivide((3,1,1),1, vertical_gap=2)
+    draw_expendable_field(page, ammo_rect, "Ammo", 20)
+    draw_expendable_field(page, rations_rect, "Rations", 10)
+    draw_expendable_field(page, torches_rect, "Torches", 10)
+
+def draw_expendable_field(page, rect, title, count):
+    num_rows = 2 if count > 10 else 1
+    num_cols = count // 2 if count > 10 else count
+    page.draw_text_aligned(title, rect, "left", "center", font_size=8, small_caps=True)
+    for r in rect.apply_margin(left=12).subdivide(num_rows, num_cols):
         checkbox = Rectangle(w=3,h=3).align_to_rect(r)
         page.draw_rect(checkbox, stroke_width=0.25, radius=1)
+
     
 def draw_spell_level(page, rect, lvl, character, gap=2):
     num_slots = character.spell_slots_for_level(lvl)
@@ -388,13 +402,37 @@ def draw_spell_level(page, rect, lvl, character, gap=2):
     page.draw_text_aligned(lvl, rect.apply_margin(1,1), "left", "top", font_size=8, small_caps=True, color=text_color)
 
 
+def draw_spell_level(page, rect, lvl, character, gap=2):
+    num_slots = character.spell_slots_for_level(lvl)
+    text_color = 0.0
+    if num_slots == 0:
+        #page.draw_line_humanized(rect.diagonal_a(), stroke_width=0.4)
+        #page.fill_rect(r, fill_color=0.75)
+        text_color = 0.5
+    else:
+        body = rect.apply_margin(left=2, right=2, top=4, bottom=1)
+        first_slot = Rectangle(w=3, h=3).align_to_rect(body, "center", "top")
+        slots = [first_slot]
+        if num_slots >= 2:
+            slots.append(slots[0].duplicate_below())
+        if num_slots >= 3:
+            slots.append(slots[1].duplicate_below())
+        if num_slots >= 4:
+            slots.append(slots[2].duplicate_below())
+
+        for s in slots:
+            page.draw_rect(s, stroke_width=0.25)
+    
+    page.draw_text_aligned(lvl, rect.apply_margin(1,1), "center", "top", font_size=8, small_caps=True, color=text_color)
+
+
 def draw_spell_slots(page, rect, character, gap=2):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    max_level = max(6, character.max_spell_level)
+    max_level = max(9, character.max_spell_level)
     for lvl, lvl_rect in zip(range(max_level), rect.subdivide(1,max_level)):
         lvl += 1
         draw_spell_level(page, lvl_rect, lvl, character, gap=gap)
-        page.draw_line_humanized(lvl_rect.right_edge(), stroke_width=0.2)     
+        #page.draw_line_humanized(lvl_rect.right_edge(), stroke_width=0.2)     
     #draw_fields(page, rect, spell_levels, humanized=True) 
 
 def draw_personality(page, rect, character, heading=False, gap=2):
@@ -455,15 +493,21 @@ def main():
     page.register_font("souvenir/souvenir_italic.ttf", "SouvenirItalic")
     page.register_font("souvenir/souvenir_bold_italic.ttf", "SouvenirBoldItalic")
     page.register_font("roboto_slab/roboto_slab_bold.ttf", "RobotoSlabBold")
-    page.register_font("roboto_slab/roboto_slab_semibold.ttf", "RobotoSlabSemiBold")
+    page.register_font("roboto_slab/roboto_slab_semibold.ttf", "RobotoSlab-SemiBold")
     page.register_font("roboto_slab/roboto_slab_regular.ttf", "RobotoSlab")
+    page.register_font("tangerine/tangerine_regular.ttf", "Tangerine")
+    page.register_font("tangerine/tangerine_bold.ttf", "TangerineBold")
+
+    page.register_font_family("RobotoSlab", "RobotoSlab", bold="RobotoSlabBold")
 
     from orikour import orikour
     from tombur import tombur
+    from gaia import gaia
+    from melwen import melwen
+    from gundren import gundren
 
-    characters = [tombur, orikour]
+    characters = [tombur, orikour, gaia, melwen, gundren]
 
-    
     for character in characters:
         draw_character_sheet_a4_landscape(page, page.page_rect, character)
         page.new_page()

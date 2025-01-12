@@ -2,7 +2,7 @@ from math import ceil
 
 ABILITIES = ('str', 'dex', 'con', 'int', "wis", "cha")
 STR_SKILLS = ('athletics', )
-DEX_SKILLS = ('acrobatics', 'sleight_of_hand', 'stealth')
+DEX_SKILLS = ('acrobatics', 'sleight_of_hand', 'open_locks', 'disarm_traps', 'stealth')
 CON_SKILLS = tuple()
 INT_SKILLS = ('arcana', 'history', 'investigation', 'nature', 'religion')
 WIS_SKILLS = ('animal_handling', 'insight', 'medicine', 'perception', 'survival')
@@ -10,6 +10,8 @@ CHA_SKILLS = ('deception', 'intimidation', 'performance', 'persuation')
 SKILLS_FOR_ABILITY = { 'str':STR_SKILLS, 'dex':DEX_SKILLS, 'con':CON_SKILLS,
                         'int':INT_SKILLS, 'wis':WIS_SKILLS, 'cha':CHA_SKILLS}
 
+EXPLORERS_PACK = ['Bedroll', 'Mess Kit', 'Tinderbox', '10 Torches', '10 Rations', '50ft Rope', 'Waterskin']
+DUNGEONEERS_PACK = ['Bedroll', 'Crowbar', 'Hammer', 'Pitons', 'Tinderbox', '10 Torches', '10 Rations', '50ft Rope', 'Waterskin']
 ABILITY_FOR_SKILL = {skill:ability for ability,values in SKILLS_FOR_ABILITY.items() for skill in values}
 
 def ability_for_skill(skill):
@@ -50,9 +52,14 @@ class Character():
         self.proficiencies = []
         self.feats_traits = []
         self.gear = []
+        self.backpack = []
         self.items = []
         self.passive_perception = kwargs.get("passive_perception", 10 + self.skill_modifier("perception"))
-        self.is_spellcaster = kwargs.get("is_spellcaster", self.profession.lower() in ("wizard", "druid"))
+        self.is_spellcaster = kwargs.get("is_spellcaster", self.profession.lower() in ("wizard", "druid", "cleric"))
+        self.notes = kwargs.get("notes", "")
+        self.font = kwargs.get("font")
+        self.gp = kwargs.get("gp", 0)
+        self.sp = kwargs.get("sp", 0)
 
     def ability_modifier(self, ability):
         return int((getattr(self, ability) - 10) / 2)
@@ -67,6 +74,8 @@ class Character():
     def spell_slots_for_level(self, spell_lvl):
         if not self.is_spellcaster:
             return 0
+        elif self.profession.lower() == "ranger":
+            return self.spell_slots_for_level_ranger(spell_lvl)
 
         if spell_lvl == 1:
             return min(4, self.level + 1)
@@ -103,6 +112,23 @@ class Character():
             return 1 if self.level >= 17 else 0
         else:
             raise ValueError
+
+    def spell_slots_for_level_ranger(self, spell_lvl):
+        lvl = self.level
+        if spell_lvl == 1:
+            return 4 if lvl >= 5 else 3 if lvl >= 3 else 1 if lvl == 2 else 0
+        else:
+            return 0
+
+    @property
+    def spell_saving_dc(self):
+        if not self.is_spellcaster:
+            return 0
+        elif self.profession.lower() in ("wizard",):
+            return 8 + self.proficiency_bonus + self.ability_modifier("int")
+        elif self.profession.lower() in ("druid", "cleric", "ranger"):
+            return 8 + self.proficiency_bonus + self.ability_modifier("wis")
+
 
     @property
     def max_spell_level(self):
