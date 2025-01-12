@@ -131,10 +131,10 @@ def draw_fields(page, rect, labels, values=SimpleNamespace(), humanized=False, n
 def draw_hp_field(page, rect, character):
     page.draw_rect_humanized(rect, stroke_width=0.4)
     max_hp_rect, cur_hp_rect, tmp_hp_rect = rect.subdivide(1, 3)
-    page.draw_text_aligned("HP", max_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
+    page.draw_text_aligned("Max", max_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
     page.draw_text_aligned(str(character.max_hp), max_hp_rect, font_size=14)
-    page.draw_text_aligned("Cur", cur_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
-    page.draw_text_aligned("Tmp", tmp_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
+    page.draw_text_aligned("Current", cur_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
+    page.draw_text_aligned("Temp", tmp_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
     page.draw_svg("assets/heart2.svg", cur_hp_rect.apply_margin(2,2), stroke_color=0.75)
 
 def draw_coins_field(page, rect, character):
@@ -317,12 +317,13 @@ def draw_character_sheet_a4_landscape(page, rect, character=SimpleNamespace(), h
     center_block, right_block = Rectangle(left_block.x2 + gap, rect.y1, x2=rect.x2, y2=rect.y2).subdivide(1,2,gap)
     name_rect, right_block = right_block.top_partition(height=field_height, gap=gap) 
 
+    if character.is_spellcaster:
+        spell_slots_rect = Rectangle(h=8).horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(rect, "top")
+        draw_spell_slots(page, spell_slots_rect, character)
+
     hp_rect = Rectangle(w=name_rect.w/2, h=field_height).align_to_rect(name_rect, "left", "below", vertical_gap=gap)
     coins_rect = Rectangle(w=field_width,h=field_height).align_to_rect(name_rect, horizontal_align="right", vertical_align="below", vertical_gap=gap)
 
-    if character.is_spellcaster:
-        spell_slots_rect, left_block = left_block.top_partition(height=8, gap=gap)
-        draw_spell_slots(page, spell_slots_rect, character)
 
     attack_rect, skills_rect, proficiencies_rect, feats_traits_rect = left_block.subdivide(2,2,gap,gap)
     gear_rect = Rectangle().horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(skills_rect, "block")
@@ -358,36 +359,42 @@ def draw_items(page, rect, character, heading=False, gap=2):
         page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
     draw_text_field(page, ammo_rect, "Ammo", humanized=True)
-
+    for r in ammo_rect.apply_margin(left=10, right=10, y=1).subdivide(2, 10):
+        checkbox = Rectangle(w=3,h=3).align_to_rect(r)
+        page.draw_rect(checkbox, stroke_width=0.25, radius=1)
     
+def draw_spell_level(page, rect, lvl, character, gap=2):
+    num_slots = character.spell_slots_for_level(lvl)
+    text_color = 0.0
+    if num_slots == 0:
+        page.draw_line_humanized(rect.diagonal_a(), stroke_width=0.4)
+        #page.fill_rect(r, fill_color=0.75)
+        text_color = 0.5
+    else:
+        slots = [Rectangle(w=3, h=3)]
+        if num_slots >= 2:
+            slots.append(slots[0].duplicate_right())
+        if num_slots >= 3:
+            slots.append(slots[0].duplicate_below())
+        if num_slots == 4:
+            slots.append(slots[1].duplicate_below())
+
+        body = rect.apply_margin(left=4, right=2, y=2)
+        slots = Rectangle.align_rects_to_rect(slots, body)           
+
+        for s in slots:
+            page.draw_rect(s, stroke_width=0.25)
+    
+    page.draw_text_aligned(lvl, rect.apply_margin(1,1), "left", "top", font_size=8, small_caps=True, color=text_color)
+
+
 def draw_spell_slots(page, rect, character, gap=2):
-    for lvl, lvl_rect in zip(range(9), rect.subdivide(1,9)):
-        lvl += 1
-        num_slots = character.spell_slots_for_level(lvl)
-        text_color = 0.0
-        if num_slots == 0:
-            page.draw_line_humanized(lvl_rect.diagonal_a(), stroke_width=0.4)
-            #page.fill_rect(r, fill_color=0.75)
-            text_color = 0.5
-        else:
-            slots = [Rectangle(w=3, h=3)]
-            if num_slots >= 2:
-                slots.append(slots[0].duplicate_right())
-            if num_slots >= 3:
-                slots.append(slots[0].duplicate_below())
-            if num_slots == 4:
-                slots.append(slots[1].duplicate_below())
-
-            body = lvl_rect.apply_margin(left=4, right=2, y=2)
-            slots = Rectangle.align_rects_to_rect(slots, body)           
-
-            for s in slots:
-                page.draw_rect(s, stroke_width=0.25)
-
-        page.draw_text_aligned(lvl, lvl_rect.apply_margin(1,1), "left", "top", font_size=8, small_caps=True, color=text_color)
-        page.draw_line_humanized(lvl_rect.right_edge(), stroke_width=0.4)
     page.draw_rect_humanized(rect, stroke_width=0.4)
-
+    max_level = max(6, character.max_spell_level)
+    for lvl, lvl_rect in zip(range(max_level), rect.subdivide(1,max_level)):
+        lvl += 1
+        draw_spell_level(page, lvl_rect, lvl, character, gap=gap)
+        page.draw_line_humanized(lvl_rect.right_edge(), stroke_width=0.2)     
     #draw_fields(page, rect, spell_levels, humanized=True) 
 
 def draw_personality(page, rect, character, heading=False, gap=2):

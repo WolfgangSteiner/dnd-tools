@@ -104,6 +104,13 @@ class Character():
         else:
             raise ValueError
 
+    @property
+    def max_spell_level(self):
+        if not self.is_spellcaster:
+            return 0
+        for lvl in range(9,0,-1):
+            if self.spell_slots_for_level(lvl) > 0:
+                return lvl
     
 
     @property
