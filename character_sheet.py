@@ -110,9 +110,16 @@ def draw_text_field(page, rect, title, values=SimpleNamespace(), value=None, hum
             page.layout_text_aligned(value, value_box, font=font, font_size=font_size, horizontal_align=horizontal_align)
 
 
-def draw_fields(page, rect, labels, values=SimpleNamespace(), humanized=False, num_rows=1, num_cols=None):
+def draw_fields(page, rect, labels, values=SimpleNamespace(), humanized=False, num_rows=1, num_cols=None, field_width=None, field_height=None, horizontal_align="center", vertical_align="center", gap=2):
     num_cols = get_arg(num_cols, len(labels))
-    for i,r in enumerate(rect.subdivide(num_rows, num_cols, horizontal_gap=2, vertical_gap=2)):
+    content_rect = rect.copy()
+    if field_width:
+        content_rect = num_cols * field_width + (num_cols - 1) * gap
+
+    if field_height:
+        content_rect = num_rows * field_height + (num_rows - 1) * gap
+
+    for i,r in enumerate(content_rect.subdivide(num_rows, num_cols, horizontal_gap=gap, vertical_gap=gap)):
         label = labels[i]
         is_modifier = label.startswith('+')
         if is_modifier:
@@ -155,9 +162,9 @@ def capitalize_words(string):
     return " ".join([w.capitalize() for w in string.split()])
 
 
-def draw_name_exp_fields(page, rect, values=SimpleNamespace(), humanized=True):
+def draw_name_exp_fields(page, rect, values=SimpleNamespace(), humanized=True, xp_field_width=17):
     draw_field(page, rect, "", humanized=humanized)
-    left_field,lvl_field = rect.right_partition(width=16)
+    left_field,lvl_field = rect.right_partition(width=xp_field_width)
     page.draw_line_humanized(lvl_field.left_edge())
     draw_field(page, lvl_field, "XP", values=values, draw_frame=False) 
     name_field, type_field = left_field.top_partition(0.6)
@@ -289,11 +296,69 @@ def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=T
     draw_personality(page, text_rect, character, gap=gap)
 
 
+def calc_field_rect(num_rows, num_cols, field_width=17, field_height=16, gap=2):
+    w = field_width * num_cols + gap * (num_cols - 1)
+    h = field_height * num_rows + gap * (num_rows - 1)
+    return Rectangle(0,0,w,h)
+
+
+def draw_character_sheet_a4_landscape(page, rect, character=SimpleNamespace(), humanized=True):
+    page.font = "SouvenirDemi"
+    page.stroke_width = 0.4 
+    page.stroke_color = 0
+    gap = 2
+    field_width=17
+    field_height = 16
+
+    rect = rect.apply_margin(10,10)
+    ability_rect = calc_field_rect(1, 6).align_to_rect(rect, "left", "top") 
+    other_stats_rect = ability_rect.duplicate_below(gap=gap)
+    left_block = Rectangle(x1=rect.x, y1=rect.y, x2=ability_rect.x2, y2=other_stats_rect.y1 - gap)
+    center_block, right_block = Rectangle(left_block.x2 + gap, rect.y1, x2=rect.x2, y2=rect.y2).subdivide(1,2,gap)
+    name_rect, right_block = right_block.top_partition(height=field_height, gap=gap) 
+
+    hp_rect = Rectangle(w=name_rect.w/2, h=field_height).align_to_rect(name_rect, "left", "below", vertical_gap=gap)
+    coins_rect = Rectangle(w=field_width,h=field_height).align_to_rect(name_rect, horizontal_align="right", vertical_align="below", vertical_gap=gap)
+
+    if character.is_spellcaster:
+        spell_slots_rect, left_block = left_block.top_partition(height=8, gap=gap)
+        draw_spell_slots(page, spell_slots_rect, character)
+
+    attack_rect, skills_rect, proficiencies_rect, feats_traits_rect = left_block.subdivide(2,2,gap,gap)
+    gear_rect = Rectangle().horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(skills_rect, "block")
+    personality_rect = gear_rect.duplicate_below(gap)
+    items_rect = gear_rect.duplicate_right(gap)
+    notes_rect = items_rect.duplicate_below(gap)
+
+    draw_name_exp_fields(page, name_rect, values=character, humanized=humanized)
+    draw_ability_fields(page, ability_rect, values=character, humanized=humanized)
+    draw_other_stats_fields(page, other_stats_rect, values=character)
+    draw_hp_field(page, hp_rect, character=character)
+    draw_coins_field(page, coins_rect, character)
+    draw_attacks(page, attack_rect, values=character)
+    draw_skills(page, skills_rect, values=character)
+    draw_proficiency_field(page, proficiencies_rect, character=character)
+    draw_feats_traits(page, feats_traits_rect, character)
+    draw_inventory(page, gear_rect, character)
+    draw_items(page, items_rect, character)
+    draw_personality(page, personality_rect, character, gap=gap)
+    draw_text_field(page, notes_rect, "Notes", humanized=True)
+
+
 def draw_inventory(page, rect, character, heading=False, gap=2):
     draw_text_field(page, rect, "Gear", humanized=True)
     for i,r in enumerate(rect.apply_margin(2,2).subdivide(10,2, horizontal_gap=2, col_wise=True)):
         page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
+
+def draw_items(page, rect, character, heading=False, gap=2):
+    items_rect, ammo_rect = rect.bottom_partition(height=10, gap=gap)
+    draw_text_field(page, items_rect, "Items", humanized=True)
+    for i,r in enumerate(items_rect.apply_margin(2,2).subdivide(8,2, horizontal_gap=2, col_wise=True)):
+        page.draw_text_aligned(f"{i+1:2d}", r.apply_margin(0,1), horizontal_align="left", vertical_align="bottom", font="Souvenir", font_size=6) 
+        page.draw_line(r.bottom_edge(), stroke_width=0.5)
+    draw_text_field(page, ammo_rect, "Ammo", humanized=True)
+
     
 def draw_spell_slots(page, rect, character, gap=2):
     for lvl, lvl_rect in zip(range(9), rect.subdivide(1,9)):
@@ -376,7 +441,7 @@ def draw_character_sheet_cards(page, rect, character):
 
 
 def main():
-    page = Page("pdf/character_sheet.pdf", pagesize=Page.A4, landscape=False)
+    page = Page("pdf/character_sheet.pdf", pagesize=Page.A4, landscape=True)
     page.register_font("souvenir/souvenir.ttf", "Souvenir")
     page.register_font("souvenir/souvenir_demi.ttf", "SouvenirDemi")
     page.register_font("souvenir/souvenir_bold.ttf", "SouvenirBold")
@@ -393,10 +458,8 @@ def main():
 
     
     for character in characters:
-        draw_character_sheet_a5(page, page.page_rect, character)
-        page.new_page(landscape=True)
-        draw_character_sheet_cards(page, page.page_rect, character)
-        page.new_page(landscape=False)
+        draw_character_sheet_a4_landscape(page, page.page_rect, character)
+        page.new_page()
     #hearts_arr = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 16] 
 
     #for i, hearts in enumerate(hearts_arr):

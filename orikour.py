@@ -18,7 +18,8 @@ orikour.attacks = [
 ]
 
 orikour.proficiencies = [
-    "Light & Medium Armor, Shields",
+    "Light & Medium Armor",
+    "Shields",
     "Martial & Light Weapons",
 ]
 
