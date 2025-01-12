@@ -18,11 +18,17 @@ class Point:
     def __rmul__(self, a):
         return self.__mul__(a)
 
+    def __neg__(self):
+        return Point(-self.x, -self.y)
+
     def inc_x(self, ox):
         return Point(self.x + ox, self.y)
 
     def inc_y(self, oy):
         return Point(self.x, self.y + oy)
+
+    def __repr__(self):
+        return f"({self.x:.2f}, {self.y:.2f})"
 
     @staticmethod
     def random_direction():

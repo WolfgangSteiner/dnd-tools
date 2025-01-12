@@ -296,22 +296,31 @@ def draw_inventory(page, rect, character, heading=False, gap=2):
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
     
 def draw_spell_slots(page, rect, character, gap=2):
-    for lvl, r in zip(range(9), rect.subdivide(1,9)):
+    for lvl, lvl_rect in zip(range(9), rect.subdivide(1,9)):
         lvl += 1
         num_slots = character.spell_slots_for_level(lvl)
         text_color = 0.0
         if num_slots == 0:
-            page.draw_line_humanized(r.diagonal_a(), stroke_width=0.4)
+            page.draw_line_humanized(lvl_rect.diagonal_a(), stroke_width=0.4)
             #page.fill_rect(r, fill_color=0.75)
             text_color = 0.5
         else:
-            num_rows = 1 if num_slots <= 3 else 2
-            num_cols = num_slots // num_rows
-            bips = r.apply_margin(left=4, right=2, y=2).subdivide(2,2)
-            for i in range(num_slots):
-                page.draw_rect(bips[i], stroke_width=0.25)
-        page.draw_text_aligned(lvl, r.apply_margin(1,1), "left", "top", font_size=8, small_caps=True, color=text_color)
-        page.draw_line_humanized(r.right_edge(), stroke_width=0.4)
+            slots = [Rectangle(w=3, h=3)]
+            if num_slots >= 2:
+                slots.append(slots[0].duplicate_right())
+            if num_slots >= 3:
+                slots.append(slots[0].duplicate_below())
+            if num_slots == 4:
+                slots.append(slots[1].duplicate_below())
+
+            body = lvl_rect.apply_margin(left=4, right=2, y=2)
+            slots = Rectangle.align_rects_to_rect(slots, body)           
+
+            for s in slots:
+                page.draw_rect(s, stroke_width=0.25)
+
+        page.draw_text_aligned(lvl, lvl_rect.apply_margin(1,1), "left", "top", font_size=8, small_caps=True, color=text_color)
+        page.draw_line_humanized(lvl_rect.right_edge(), stroke_width=0.4)
     page.draw_rect_humanized(rect, stroke_width=0.4)
 
     #draw_fields(page, rect, spell_levels, humanized=True) 

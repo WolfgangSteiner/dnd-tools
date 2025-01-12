@@ -92,6 +92,9 @@ class Rectangle:
     def edges(self):
         return [self.bottom_edge(), self.right_edge(), self.top_edge(), self.left_edge()]
 
+    def __repr__(self):
+        return f"[{self.x:.2f}, {self.y:.2f}, {self.x2:.2f}, {self.y2:.2f}]"
+
     def align_to_rect(self, rect, horizontal_align="center", vertical_align="center", horizontal_gap=0, vertical_gap=0):
         res = Rectangle(self.x, self.y, self.w, self.h)
         res = res.horizontal_align_to_rect(rect, align=horizontal_align, gap=horizontal_gap)
@@ -178,6 +181,23 @@ class Rectangle:
         y2 = max(self.y2, rect.y2)
         return Rectangle(x1, y1, x2 - x1, y2 - y1) 
 
+    @staticmethod
+    def union_of_rects(rects):
+        if len(rects) == 0:
+            return Rectangle()
+        res = rects[0]
+        for r in rects:
+            res = res.union(r)
+        return res
+
+    @staticmethod
+    def align_rects_to_rect(rects, rect, horizontal_align="center", vertical_align="center"):
+        bbox = Rectangle.union_of_rects(rects)
+        aligned_bbox = bbox.align_to_rect(rect, horizontal_align, vertical_align)
+        offset = aligned_bbox.bottom_left() - bbox.bottom_left()
+        res = [r.translate(offset) for r in rects]
+        return res
+
     def copy(self):
         return Rectangle(self.x, self.y, self.w, self.h)
 
@@ -238,7 +258,7 @@ class Rectangle:
         return remain, res
 
     def translate(self, p):
-        return Rectangle(self.x + p.x, self.y + p.y, self.w, self.h, self.radius)
+        return Rectangle(x=self.x + p.x, y=self.y + p.y, w=self.w, h=self.h, radius=self.radius)
 
     def get_corner_path(self, name, fraction=0.25, width=None):
         if width is None:
