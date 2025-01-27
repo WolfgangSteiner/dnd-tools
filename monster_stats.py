@@ -146,19 +146,12 @@ def draw_monster_stat(page, rect, monster):
 
 def main():
     page = Page(landscape=True)
-    jelly = Monster.from_yaml("monsters/ochre_jelly.yml")
-    skeleton = Monster.from_yaml("monsters/skeleton.yml")
-    skeleton_acolyte = Monster.from_yaml("monsters/skeleton_acolyte.yml")
-    flying_sword = Monster.from_yaml("monsters/flying_sword.yml")
-    goblin = Monster.from_yaml("monsters/goblin.yml")
-
-    monsters = [jelly, skeleton, skeleton_acolyte, flying_sword, goblin]
-
+    monsters = Monster.load_monsters_from_directory("monsters")
     rects = page.page_rect.apply_margin(20,20).subdivide(2, 3, horizontal_gap=2, vertical_gap=5, col_wise=True)
     rects_per_page = 6
 
-    for i, monster in enumerate(monsters):
-        bbox = draw_monster_stat(page, rects[i%rects_per_page], monster)
+    for i, monster_name in enumerate(monsters.keys()):
+        bbox = draw_monster_stat(page, rects[i%rects_per_page], monsters[monster_name])
         if i == rects_per_page - 1:
             page.new_page()
 
