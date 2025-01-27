@@ -6,16 +6,16 @@ def capitalize_words(text):
     return " ".join([word.capitalize() for word in text.split()])
 
 def draw_field(page, rect, title, values, draw_box=False, mod=False, right_to_left=False):
+    if title.startswith("+"):
+        mod = True
+        title = title[1:]
+
     if ":" in title:
         title, key = title.split(":")
     else:
         key = title
 
     value = values[key]
-
-    if title.startswith("+"):
-        mod = True
-        title = title[1:]
 
     if mod:
         value = f"{value:+}"
@@ -47,7 +47,7 @@ def draw_heading(page, rect, monster):
     rect, remain = rect.top_partition(height=bbox.h)
     rect = rect.apply_margin(x=gap)
     stat_rect = rect.bottom_right_rectangle(6, 6)
-    for stat in ["hp", "ac", "per:passive_perception"]:
+    for stat in ["hp", "ac", "+ini", "per:passive_perception"]:
         stat_rect = draw_field(page, stat_rect, stat, monster.as_dict, draw_box=False, right_to_left=True)
 
     return remain

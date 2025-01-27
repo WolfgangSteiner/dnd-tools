@@ -29,11 +29,17 @@ class Monster:
         self.gear = kwargs.get("gear", [])
 
     @property
+    def ini(self):
+        return self.abilities["dex"]
+
+
+    @property
     def as_dict(self):
         return {
             "name": self.name,
             "type": self.type,
             "size": self.size,
+            "ini": self.ini,
             "ac": self.ac,
             "hp": self.hp,
             "hit_dice": self.hit_dice,
