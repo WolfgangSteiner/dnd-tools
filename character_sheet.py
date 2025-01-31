@@ -4,6 +4,7 @@ import re
 import math
 from dnd_tools.dnd_character import Character, ability_for_skill, sort_skills, ABILITIES
 from pygrv.utils import get_arg, to_ordinal
+import typer
 
 def id_for_label(label):
     id = re.sub("['\"*+~()\[\]\{\}]", "", label.lower())
@@ -76,10 +77,10 @@ def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanize
 
     elif label:
         page.draw_text_aligned(label, label_rect.apply_margin(1,1), horizontal_align=label_align, vertical_align="top", small_caps=small_caps, font_size=8)
-        if label.lower() == 'spd':
+        if label.lower() == 'spd' and value:
             page.draw_text_aligned(f"{value}ft", value_box.apply_margin(1,1), "right", "bottom", font="Souvenir", font_size=8)
             value = value // 5
-        if value:
+        elif value:
             value_str = f"{value:+}" if is_modifier else str(value)
             page.draw_text_aligned(value_str, value_box, font_size=value_font_size, color=value_color)
         #page.draw_line_humanized(top_row.bottom_edge())
@@ -131,7 +132,8 @@ def draw_hp_field(page, rect, character):
     page.draw_rect_humanized(rect, stroke_width=0.4)
     max_hp_rect, cur_hp_rect, tmp_hp_rect = rect.subdivide(1, 3)
     page.draw_text_aligned("Max", max_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
-    page.draw_text_aligned(str(character.max_hp), max_hp_rect, font_size=14)
+    if character and character.max_hp:
+        page.draw_text_aligned(str(character.max_hp), max_hp_rect, font_size=14)
     page.draw_text_aligned("Current", cur_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
     page.draw_text_aligned("Temp", tmp_hp_rect.apply_margin(0,1), vertical_align="top", font_size=8, small_caps=True)
     page.draw_svg("assets/heart2.svg", cur_hp_rect.apply_margin(2,2), stroke_color=0.75)
@@ -141,8 +143,11 @@ def draw_coins_field(page, rect, character):
     gold_rect, silver_rect  = rect.subdivide(2, 1)
     page.draw_line_humanized(gold_rect.apply_margin(0, 0).bottom_edge(), stroke_width=0.4) 
     page.draw_text_aligned("gp", gold_rect.apply_margin(1,1), horizontal_align="left", vertical_align="top", font_size=8, small_caps=True)
-    page.draw_text_aligned(str(character.gp), gold_rect, color=0.75)
+    if character and character.gp:
+        page.draw_text_aligned(str(character.gp), gold_rect, color=0.75)
     page.draw_text_aligned("sp", silver_rect.apply_margin(1,1), horizontal_align="left", vertical_align="top", font_size=8, small_caps=True)
+    if character and character.sp:
+        page.draw_text_aligned(str(character.sp), silver_rect, color=0.75)
 
 def draw_ability_fields(page, rect, values=SimpleNamespace(), humanized=True, num_rows=1, num_cols=6):
     ability_labels = ("STR", "DEX", "CON", "INT", "WIS", "CHA")
@@ -166,19 +171,28 @@ def draw_name_exp_fields(page, rect, values=SimpleNamespace(), humanized=True, x
     draw_field(page, rect, "", humanized=humanized)
     left_field,lvl_field = rect.right_partition(width=xp_field_width)
     page.draw_line_humanized(lvl_field.left_edge())
+
     draw_field(page, lvl_field, "XP", values=values, draw_frame=False, value_color=0.75) 
+
     name_field, type_field = left_field.top_partition(0.6)
-    name_font = get_arg(values.font, "SouvenirDemi")
-    page.draw_text_aligned(values.name, name_field, font=name_font, font_size=14, small_caps=(name_font=="SouvenirDemi"))
-    ancestry = capitalize_words(ancestry_adjective(values.ancestry))
-    type_str = f"Lvl {values.level} {ancestry} {values.profession}"
-    page.draw_text_aligned(type_str, type_field, font_size=9, vertical_align="top", small_caps=True)
+    name_font = "SouvenirDemi" if values is None else get_arg(values.font, "SouvenirDemi")
+    name = "" if values is None else values.name
+    page.draw_text_aligned(name, name_field, font=name_font, font_size=14, small_caps=(name_font=="SouvenirDemi"))
+    
+    if values is not None:
+        ancestry = "" if values is None else values.ancestry
+        ancestry = capitalize_words(ancestry_adjective(ancestry))
+        profession = "" if values is None else values.profession
+        type_str = f"Lvl {values.level} {ancestry} {profession}"
+        page.draw_text_aligned(type_str, type_field, font_size=9, vertical_align="top", small_caps=True)
 
 def draw_skills(page, rect, character=SimpleNamespace(), num_rows=8, humanized=True, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
     header, body = rect.apply_margin(0,0).top_partition(height=7)
     header, pb_field = header.left_partition(width=20)
-    page.draw_text_aligned(f"Prof. Bonus  {character.proficiency_bonus:+}", pb_field.apply_margin(2,2), "center", "center", small_caps=True)
+    proficiency_bonus = f"{character.proficiency_bonus:+}" if getattr(character, "proficiency_bonus", None) else "   "
+    page.draw_text_aligned(f"Prof. Bonus", pb_field.apply_margin(2,2), "left", "center", small_caps=True)
+    page.draw_text_aligned(proficiency_bonus, pb_field.apply_margin(4,2), "right", "center", small_caps=True)
     page.draw_line_humanized(pb_field.bottom_edge(), stroke_width=0.4)
     page.draw_line_humanized(pb_field.left_edge(), stroke_width=0.4)
     #page.draw_line_humanized(pb_value_rect.left_edge(), stroke_width=0.4)
@@ -186,7 +200,10 @@ def draw_skills(page, rect, character=SimpleNamespace(), num_rows=8, humanized=T
     rows = body.apply_margin(2,0).subdivide(num_rows, 1)
     if not hasattr(character, "skills"):
         return
-    items = [f"{capitalize_words(skill)}|{character.skill_modifier(skill):+}" for skill in character.skills]
+    if getattr(character, "skills"):
+        items = [f"{capitalize_words(skill)}|{character.skill_modifier(skill):+}" for skill in character.skills]
+    else:
+        items = []
     draw_list(page, body, "Skill|Modifier", items, num_cols=2, subdivide_factors=(0.8,0.1), align="l|r", heading=False)
 
 
@@ -217,22 +234,25 @@ def draw_list(page, rect, title, items, num_cols, subdivide_factors=None, align=
 
 def draw_attacks(page, rect, values=SimpleNamespace(), humanized=True, gap=2, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    draw_list(page, rect, "Attack|Hit|Dmg", values.attacks, num_cols=3, subdivide_factors=(0.5,0.2, 0.3), align="l|r|r") 
+    attacks = getattr(values, "attacks", [])
+    draw_list(page, rect, "Attack|Hit|Dmg", attacks, num_cols=3, subdivide_factors=(0.5,0.2, 0.3), align="l|r|r") 
 
 
 def draw_other_stats_fields(page, rect, character=SimpleNamespace(), humanized=True, gap=2):
-    extra_field = "Spell DC:=spell_saving_dc" if character.is_spellcaster else ""
+    extra_field = "Spell DC:=spell_saving_dc" if character is None or character.is_spellcaster else ""
     draw_fields(page, rect, ("AC", "+INI", "SPD", "Pass Per:=passive_perception", "Hit Dice", extra_field), values=character, humanized=True)
 
 
 def draw_proficiency_field(page,rect, character=SimpleNamespace(), humanized=True, gap=2, heading=True):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    draw_list(page, rect, "Proficiencies", character.proficiencies, num_cols=1, heading=heading)
+    proficiencies = getattr(character, "proficiencies", [])
+    draw_list(page, rect, "Proficiencies", proficiencies, num_cols=1, heading=heading)
 
 
 def draw_feats_traits(page,rect, character=SimpleNamespace(), humanized=True, gap=2, heading=True):
+    feats_traits = getattr(character, "feats_traits", [])
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    draw_list(page, rect, "Feats & Traits", character.feats_traits, num_cols=1, heading=heading)
+    draw_list(page, rect, "Feats & Traits", feats_traits, num_cols=1, heading=heading)
 
 
 def draw_character_sheet_a5(page, rect, character=SimpleNamespace(), humanized=True):
@@ -310,7 +330,7 @@ def draw_character_sheet_a4_landscape(page, rect, character=SimpleNamespace(), h
     center_block, right_block = Rectangle(left_block.x2 + gap, rect.y1, x2=rect.x2, y2=rect.y2).subdivide(1,2,gap)
     name_rect, right_block = right_block.top_partition(height=field_height, gap=gap) 
 
-    if character.is_spellcaster:
+    if character is None or character.is_spellcaster:
         spell_slots_rect = Rectangle(h=16).horizontal_align_to_rect(center_block, "block").vertical_align_to_rect(other_stats_rect, "block")
         draw_spell_slots(page, spell_slots_rect, character)
 
@@ -340,7 +360,9 @@ def draw_character_sheet_a4_landscape(page, rect, character=SimpleNamespace(), h
     draw_items(page, items_rect, character)
     draw_expendables(page, expendables_rect)
     draw_personality(page, personality_rect, character, gap=gap)
-    draw_text_field(page, notes_rect, "Notes", value="\n".join(character.notes), humanized=True, vertical_align="top", font_size=8)
+    notes = getattr(character, "notes", [])
+    draw_text_field(page, notes_rect, "Notes", value="\n".join(notes), humanized=True, vertical_align="top", font_size=8)
+    page.new_page()
 
 def draw_inventory(page, rect, inventory_list, num_rows, num_cols, title="", gap=2):
     draw_text_field(page, rect, title, humanized=True)
@@ -351,13 +373,16 @@ def draw_inventory(page, rect, inventory_list, num_rows, num_cols, title="", gap
         page.draw_line(r.bottom_edge(), stroke_width=0.5)
 
 def draw_gear(page, rect, character, heading=False, gap=2):
-    draw_inventory(page, rect, character.gear, 10, 1, title="Gear")
+    items = getattr(character, "gear", [])
+    draw_inventory(page, rect, items, 10, 1, title="Gear")
 
 def draw_backpack(page, rect, character, heading=False, gap=2):
-    draw_inventory(page, rect, character.backpack, 10, 1, title="Backpack")
+    items = getattr(character, "backpack", [])
+    draw_inventory(page, rect, items, 10, 1, title="Backpack")
 
 def draw_items(page, rect, character, heading=False, gap=2):
-    draw_inventory(page, rect, character.items, 8, 2, title="Items")
+    items = getattr(character, "items", [])
+    draw_inventory(page, rect, items, 8, 2, title="Items")
 
 
 def draw_expendables(page, rect):
@@ -378,7 +403,7 @@ def draw_expendable_field(page, rect, title, count):
 
     
 def draw_spell_level(page, rect, lvl, character, gap=2):
-    num_slots = character.spell_slots_for_level(lvl)
+    num_slots = 0 if character is None else character.spell_slots_for_level(lvl)
     text_color = 0.0
     if num_slots == 0:
         page.draw_line_humanized(rect.diagonal_a(), stroke_width=0.4)
@@ -403,7 +428,7 @@ def draw_spell_level(page, rect, lvl, character, gap=2):
 
 
 def draw_spell_level(page, rect, lvl, character, gap=2):
-    num_slots = character.spell_slots_for_level(lvl)
+    num_slots = 0 if character is None else character.spell_slots_for_level(lvl)
     text_color = 0.0
     if num_slots == 0:
         #page.draw_line_humanized(rect.diagonal_a(), stroke_width=0.4)
@@ -428,7 +453,7 @@ def draw_spell_level(page, rect, lvl, character, gap=2):
 
 def draw_spell_slots(page, rect, character, gap=2):
     page.draw_rect_humanized(rect, stroke_width=0.4)
-    max_level = max(9, character.max_spell_level)
+    max_level = 9 if character is None else max(9, character.max_spell_level)
     for lvl, lvl_rect in zip(range(max_level), rect.subdivide(1,max_level)):
         lvl += 1
         draw_spell_level(page, lvl_rect, lvl, character, gap=gap)
@@ -497,7 +522,6 @@ def main():
     page.register_font("roboto_slab/roboto_slab_regular.ttf", "RobotoSlab")
     page.register_font("tangerine/tangerine_regular.ttf", "Tangerine")
     page.register_font("tangerine/tangerine_bold.ttf", "TangerineBold")
-
     page.register_font_family("RobotoSlab", "RobotoSlab", bold="RobotoSlabBold")
 
     from orikour import orikour
@@ -510,9 +534,10 @@ def main():
 
     for character in characters:
         draw_character_sheet_a4_landscape(page, page.page_rect, character)
-        page.new_page()
     #hearts_arr = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 16] 
 
+    draw_character_sheet_a4_landscape(page, page.page_rect, None)
+    draw_character_sheet_a4_landscape(page, page.page_rect, None)
     #for i, hearts in enumerate(hearts_arr):
     #    r = rects[i]
     #    draw_hp_card_numbered(p, r, hearts)
@@ -522,4 +547,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

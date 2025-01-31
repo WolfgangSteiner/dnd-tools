@@ -34,14 +34,8 @@ def main():
     page = Page("pdf/board.pdf", pagesize=Page.A4, landscape=True)
 
     todo = [
-        "Character Sheets !!!",
-        "Traps for entrance room",
+        "
         "Design skeleton encounter",
-        "Draw Dungon Flowchart",
-        "Draw Dungon Map",
-        "Build Columns",
-        "Initiative Tokens for DM screen",
-        "Build corner walls",
     ]
 
     draw_board( page, "Todo", todo, grid=(8,2), pagesize=Page.A5, landscape=False, vertical_text_align="center")

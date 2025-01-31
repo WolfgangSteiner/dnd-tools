@@ -1,4 +1,7 @@
 *.pyc
 *.pdf
+*.png
+*.zip
 spell_cards/*
 assets/*
+assets.bak/*

@@ -44,7 +44,7 @@ immunities:
 vulnerabilities:
   - "buldgeoning"
 
-special:
+specials:
   - "blindsight:60"
   - ["Antimagic Susceptibility", "Incapacitated in antimagic field. Must CON.SAV against Dispel Magic, or fall unconcious for 1 min"]
   - ["False Appearance", "Indistinguishable from normal sword when motionless."]

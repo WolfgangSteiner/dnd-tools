@@ -1,0 +1,38 @@
+name: "Skeleton Dwarf"
+type: undead
+size: medium
+ac: 15
+hp: 17
+hit_dice: 2d10+6
+cr: 1/4
+xp: 75
+
+speed:
+  walk: 30
+
+abilities:
+  str: +2
+  dex: +0
+  con: +3
+  int: -2
+  wis: -1
+  cha: -3
+
+passive_perception: 9
+
+actions:
+  - {name: Battleaxe, atk: +2, dmg: "6 (1d8+2) slash"}
+  - {name: "Battleaxe(2hd)", atk: +2, dmg: "7 (1d10+2) slash"}
+  - {name: Spear, atk: +4, dmg: "7 (1d8+2) pierce"}
+  - {name: "Spear(2hd)", atk: +4, dmg: "7 (1d8+2) pierce"}
+
+immunities:
+  - poison
+  - exhaustion
+
+vulnerabilities:
+  - buldgeoning
+
+specials:
+  - darkvision:60
+

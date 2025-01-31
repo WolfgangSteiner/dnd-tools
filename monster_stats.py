@@ -150,7 +150,7 @@ def main():
     rects = page.page_rect.apply_margin(20,20).subdivide(2, 3, horizontal_gap=2, vertical_gap=5, col_wise=True)
     rects_per_page = 6
 
-    for i, monster_name in enumerate(monsters.keys()):
+    for i, monster_name in enumerate(sorted(monsters.keys())):
         bbox = draw_monster_stat(page, rects[i%rects_per_page], monsters[monster_name])
         if i == rects_per_page - 1:
             page.new_page()

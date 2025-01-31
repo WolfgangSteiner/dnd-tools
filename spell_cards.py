@@ -28,6 +28,9 @@ spells_cleric_cantrip = ["Guidance", "Light", "Mending", "Resistance", "Sacred F
 spells = spells_cleric_lv1 + spells_cleric_cantrip
 
 spells = ["hunters_mark", "thunderwave", "grease"] 
+
+spells = ["sacred_flame", "thaumaturgy", "bless", "cure_wounds", "sanctuary"]
+
 for i, spell in enumerate(spells):
     spell = spells[i]
     r = rects[i%9]
