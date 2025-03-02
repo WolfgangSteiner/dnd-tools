@@ -80,7 +80,7 @@ def draw_field(page, rect, label, values=SimpleNamespace(), value=None, humanize
         if label.lower() == 'spd' and value:
             page.draw_text_aligned(f"{value}ft", value_box.apply_margin(1,1), "right", "bottom", font="Souvenir", font_size=8)
             value = value // 5
-        elif value:
+        if value is not None and value != '':
             value_str = f"{value:+}" if is_modifier else str(value)
             page.draw_text_aligned(value_str, value_box, font_size=value_font_size, color=value_color)
         #page.draw_line_humanized(top_row.bottom_edge())
@@ -530,7 +530,9 @@ def main():
     from melwen import melwen
     from gundren import gundren
 
-    characters = [tombur, orikour, gaia, melwen, gundren]
+    buttercup = Character.from_yaml("buttercup.yml")
+
+    characters = [tombur, orikour, gaia, melwen, gundren, buttercup]
 
     for character in characters:
         draw_character_sheet_a4_landscape(page, page.page_rect, character)

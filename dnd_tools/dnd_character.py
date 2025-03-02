@@ -1,4 +1,5 @@
 from math import ceil
+import yaml
 
 ABILITIES = ('str', 'dex', 'con', 'int', "wis", "cha")
 STR_SKILLS = ('athletics', )
@@ -49,17 +50,75 @@ class Character():
         self.hit_dice = kwargs.get("hit_dice", "1d6")
         self.spd = kwargs.get("spd", 30)
         self.attacks = kwargs.get("attacks", [f"Bare Hands|{self.ability_modifier('str'):+}"])
-        self.proficiencies = []
-        self.feats_traits = []
-        self.gear = []
-        self.backpack = []
-        self.items = []
+        self.proficiencies = kwargs.get("proficiencies", [])
+        self.feats_traits = kwargs.get("feats_traits", [])
+        self.gear =  kwargs.get("gear", [])
+        self.backpack = kwargs.get("backpack", [])
+        self.items = kwargs.get("items", [])
         self.passive_perception = kwargs.get("passive_perception", 10 + self.skill_modifier("perception"))
         self.is_spellcaster = kwargs.get("is_spellcaster", self.profession.lower() in ("wizard", "druid", "cleric"))
-        self.notes = kwargs.get("notes", "")
+        self.notes = kwargs.get("notes", [])
         self.font = kwargs.get("font")
         self.gp = kwargs.get("gp", 0)
         self.sp = kwargs.get("sp", 0)
+        self.personality = kwargs.get("personality", "")
+        self.ideals = kwargs.get("ideals", "")
+        self.bonds = kwargs.get("bonds", "")
+        self.flaws = kwargs.get("flaws", "")
+
+
+    @staticmethod
+    def from_yaml(file_path):
+        with open(file_path, "r") as file:
+            data = yaml.safe_load(file)
+
+        abilities = data.get("abilities", {'str':10, 'dex':10, 'con':10, 'int':10, 'wis':10, 'cha':12})
+        money= data.get("money", {'gp':0, 'sp':0})
+        spd = data.get("speed", {'walk': 30})
+
+        return Character(
+            name=data.get("name", "Unknown"),
+            ancestry=data.get("ancestry", "Unknown"),
+            profession=data.get("profession", "None"),
+            size=data.get("size", "medium"),
+            level=data.get("level", 1),
+            xp=data.get("xp", 0),
+            str = abilities['str'],
+            dex = abilities['dex'],
+            con = abilities['con'],
+            int = abilities['int'],
+            wis = abilities['wis'],
+            cha = abilities['cha'],
+            skills = data.get("skills", []),
+            saving_throws=data.get("saving_throws", []),
+            ac=data.get("ac", 10),
+            max_hp=data.get("max_hp", 1),
+            hit_dice=data.get("hit_dice", "1d6"),
+            spd=spd['walk'],
+            gp=money['gp'],
+            sp=money['sp'],
+            attacks =data.get("attacks", []),
+            proficiencies=data.get("proficiencies", []),
+            feats_traits=data.get("feats_traits", []),
+            gear=data.get("gear", []),
+            backpack=data.get("backpack", []),
+            items=data.get("items",[]),
+            personality=data.get("personality", ""),
+            ideals = data.get("ideals", ""),
+            bonds = data.get("bonds", ""),
+            flaws = data.get("flaws", ""),
+            notes = data.get("notes", []),
+        )
+
+    @staticmethod
+    def load_monsters_from_directory(directory):
+        monsters = {}
+        for file_name in glob.glob(f"{directory}/*.yml"):
+            monster = Monster.from_yaml(file_name)
+            monsters[monster.name.lower()] = monster
+        return monsters
+
+
 
     def ability_modifier(self, ability):
         return int((getattr(self, ability) - 10) / 2)
@@ -142,5 +201,4 @@ class Character():
     @property
     def proficiency_bonus(self):
         return ceil(self.level / 4) + 1
-
 

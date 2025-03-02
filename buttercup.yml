@@ -1,0 +1,60 @@
+name: "Buttercup"
+ancestry: "Black Bear"
+profession: ""
+level: 1
+xp: 0
+
+abilities:
+  str: 16
+  dex: 10
+  con: 16
+  int: 6
+  wis: 12
+  cha: 8
+
+skills:
+  - acrobatics
+  - athletics
+  - perception
+  - intimidation
+  - survival
+
+saving_throws:
+  - str
+  - con
+
+ini: +0
+ac: 14
+max_hp: 19
+hit_dice: 1d12
+
+speed:
+  walk: 25
+
+attacks:
+  - "Bite|+3|1d6+2"
+  - "Claws|+3|2d4+2"
+
+feats_traits:
+  - "Keen Smell"
+  - "Multiattack"
+  - "Natural Armor"
+  - "Unarmored Defence"
+  - "Rage"
+  - "Relentless Endurance"
+  - "Savage Attack"
+
+notes:
+  - "<b><it>Keen Smell.</it></b> Gain advantage on perception throws relying on smell."
+  - "<b><it>Natural Armor.</it></b> Gain +1 on AC."
+  - "<b><it>Unarmored Defence.</it></b> While not wearing armor, AC = 10 + CON.MOD + DEX.MOD."
+  - "<b>Rage.</b> 2x per LR bonus action: Adv on STR checks and saving throws, +2 melee dmg, res. to blunt, piercing, slashing damage."
+  - "<b> Relentless Endurance.</b> When reduced to 0 HP, drop to 1 HP (1x per LR)."
+  - "<b>Savage Attack.</b> On critical hit, add one additional damage dice to damage."
+  - "<b>Lost Thing.</b> Graceful movement."
+
+
+personality: "I am easygoing but beware my rage!"
+ideals: "Tit for tat."
+bonds: "I would give my life for my friends."
+flaws: "My love of honey has gotten me in trouble countless times."

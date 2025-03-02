@@ -1,0 +1,79 @@
+name: "Tombur Rockseeker"
+ancestry: "Mountain Dwarf"
+profession: "Wizard"
+level: 2
+xp: 300
+
+abilities:
+  str: 10
+  dex: 12
+  con: 16
+  int: 18
+  wis: 10
+  cha: 12
+
+skills:
+  - acrobatics
+  - performance
+  - insight
+  - investigation
+
+saving_throws:
+  - int
+  - wis
+
+ini: +1
+ac: 17
+max_hp: 18
+hit_dice: 2d6
+
+speed:
+  walk: 25
+
+money:
+  gp: 30
+  sp: 0
+
+attacks:
+  - "Quarterstaff|+2|1d6"
+  - "Fire Bolt|+6|1d10"
+  - "Ray of Frost|+6|1d8"
+
+proficiencies:
+  - "Light & Medium Armor"
+  - "Quaterstaffs, Daggers"
+  - "Dwarven Combat Training"
+  - "Light Crossbows"
+  - "Darts, Slings"
+  - "Disguise"
+  - "Lute"
+  - "Smithing"
+
+feats_traits:
+  - "By Popular Demand"
+  - "Dwarven Resilience"
+  - "Darkvision"
+  - "Arkane Recovery"
+  - "Evoker"
+
+gear: 
+  - "Chainmail"
+  - "Quarterstaff"
+  - "Spellbook"
+  - "Lute"
+
+backpack:
+  - "Component Pouch"
+  - "Book of Lore"
+  - "Costume"
+
+items:
+  - "Ink & Pen"
+  - "10 Parchment"
+  - "Bag of Sand"
+  - "Small knife"
+
+personality: "I can defuse any tension in the room."
+ideals: "I like seeing the smiles on people's faces when I perform."
+bonds: "My instrument is my most treasured possession."
+flaws: "My sharp toungue keeps getting me in trouble with the people in power."
